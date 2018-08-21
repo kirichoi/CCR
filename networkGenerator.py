@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue May 15 17:39:53 2018
-
-@author: hsauro
-"""
 
 # Generate random mass-action networks using uniuni, biuni, unibi and bibi
 # The following reaction patterns are currently not allowed:
@@ -158,46 +153,46 @@ def generateReactionList(nSpecies, nReactions):
 # [New Stoichiometry matrix, list of floatingIds, list of boundaryIds]
 def getFullStoichiometryMatrix(reactionList):
     nSpecies = reactionList[0]
-    reactionListCopy = copy.deepcopy (reactionList)
-    reactionListCopy.pop (0)
-    st = np.zeros ((nSpecies, len(reactionListCopy)))
+    reactionListCopy = copy.deepcopy(reactionList)
+    reactionListCopy.pop(0)
+    st = np.zeros((nSpecies, len(reactionListCopy)))
     
-    for index, rind in enumerate (reactionListCopy):
+    for index, rind in enumerate(reactionListCopy):
         if rind[0] == TReactionType.UNIUNI:
             # UniUni
             reactant = reactionListCopy[index][1][0]
-            st[reactant, index] = -1
+            st[reactant, index] = st[reactant, index] - 1
             product = reactionListCopy[index][2][0]
-            st[product, index] = 1
+            st[product, index] = st[product, index] + 1
      
         elif rind[0] == TReactionType.BIUNI:
             # BiUni
             reactant1 = reactionListCopy[index][1][0]
-            st[reactant1, index] = -1
+            st[reactant1, index] = st[reactant1, index] - 1
             reactant2 = reactionListCopy[index][1][1]
-            st[reactant2, index] = -1
+            st[reactant2, index] = st[reactant2, index] - 1
             product = reactionListCopy[index][2][0]
-            st[product, index] = 1
+            st[product, index] = st[product, index] + 1
 
         elif rind[0] == TReactionType.UNIBI:
             # UniBi
             reactant1 = reactionListCopy[index][1][0]
-            st[reactant1, index] = -1
+            st[reactant1, index] = st[reactant1, index] - 1
             product1 = reactionListCopy[index][2][0]
-            st[product1, index] = 1
+            st[product1, index] = st[product1, index] + 1
             product2 = reactionListCopy[index][2][1]
-            st[product2, index] = 1
+            st[product2, index] = st[product2, index] + 1
 
         else:
             # BiBi
             reactant1 = reactionListCopy[index][1][0]
-            st[reactant1, index] = -1
+            st[reactant1, index] = st[reactant1, index] - 1
             reactant2 = reactionListCopy[index][1][1]
-            st[reactant2, index] = -1
+            st[reactant2, index] = st[reactant2, index] - 1
             product1 = reactionListCopy[index][2][0]
-            st[product1, index] = 1
+            st[product1, index] = st[product1, index] + 1
             product2 = reactionListCopy[index][2][1]
-            st[product2, index] = 1
+            st[product2, index] = st[product2, index] + 1
 
     return st   
         
@@ -214,10 +209,10 @@ def removeBoundaryNodes(st):
     indexes = []
     orphanSpecies = []
     countBoundarySpecies = 0
-    for r in xrange(nSpecies): 
+    for r in range(nSpecies): 
         # Scan across the columns, count + and - coefficients
         plusCoeff = 0; minusCoeff = 0
-        for c in xrange(nReactions):
+        for c in range(nReactions):
             if st[r,c] < 0:
                 minusCoeff = minusCoeff + 1
             elif st[r,c] > 0:
@@ -245,15 +240,17 @@ def genAntimonyScript(floatingIds, boundaryIds, stt1, stt2, reactionList, bounda
     
     nSpecies = reactionList[0]
     # Remove the first element which is the nSpecies
-    reactionListCopy = copy.deepcopy (reactionList)
+    reactionListCopy = copy.deepcopy(reactionList)
     reactionListCopy.pop (0)
+    #%%
     real = np.append(floatingIds, boundaryIds)
     if type(real[0]) == 'str' or type(real[0]) == np.str_:
         real = [s.strip('S') for s in real]
-    real = map(int, real)
+    real = list(map(int, real))
     tar = stt1 + stt2
-    tar = map(int, tar)
+    tar = list(map(int, tar))
     
+    #%%
     antStr = ''
     if len (floatingIds) > 0:
         antStr = antStr + 'var ' + str(floatingIds[0])
