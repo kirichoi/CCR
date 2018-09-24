@@ -17,7 +17,7 @@ import time
 def mutate_and_evaluate(listantStr, listdist, listst, mut_ind):
     eval_dist = np.empty(mut_size)
     eval_model = np.empty(mut_size, dtype='object')
-    eval_st = np.empty(mut_size, dtype='object')
+    eval_st = np.empty([mut_size,ns,nr], dtype='object')
     
     for m in mut_range:
         antimony.loadAntimonyString(listantStr[m])
@@ -365,7 +365,7 @@ def initialize():
     
     ens_dist = np.empty(ens_size)
     ens_model = np.empty(ens_size, dtype='object')
-    ens_st = np.empty(ens_size, dtype='object')
+    ens_st = np.empty([ens_size,ns,nr], dtype='object')
     
     # Initial Random generation
     while numGoodModels < ens_size:
@@ -373,7 +373,7 @@ def initialize():
         rl = ng.generateReactionList(ns, nr)
         st = ng.getFullStoichiometryMatrix(rl)
         # Ensure no redundant model
-        while st in ens_st.any():
+        while (st == ens_st).all(axis=1).all(axis=1).any() and (st == ens_st).all(axis=2).all():
             rl = ng.generateReactionList(ns, nr)
             st = ng.getFullStoichiometryMatrix(rl)
         stt = ng.removeBoundaryNodes(st)
@@ -387,7 +387,6 @@ def initialize():
                 ss.allow_presimulation = False
                 r.steadyState()
                 SS_i = r.getFloatingSpeciesConcentrations()
-                
                 # Buggy model
                 if np.any(SS_i > 1e5):
                     r.reset()
@@ -415,7 +414,6 @@ def initialize():
 #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
 #                        + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
                     dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
-                    
                     ens_dist[numGoodModels] = dist_i
                     ens_model[numGoodModels] = antStr
                     ens_st[numGoodModels] = st
@@ -442,6 +440,7 @@ def random_gen(rnd_size):
     
     rnd_dist = np.empty(rnd_size)
     rnd_model = np.empty(rnd_size, dtype='object')
+    rnd_st = np.empty([rnd_size,ns,nr], dtype='object')
     
     while numGoodModels < rnd_size:
         rl = ng.generateReactionList(ns, nr)
@@ -486,13 +485,14 @@ def random_gen(rnd_size):
                     
                     rnd_dist[numGoodModels] = dist_i
                     rnd_model[numGoodModels] = antStr
+                    rnd_st[numGoodModels] = st
                     
                     numGoodModels = numGoodModels + 1
             except:
                 continue
             antimony.clearPreviousLoads()
     
-    return rnd_dist, rnd_model
+    return rnd_dist, rnd_model, rnd_st
 
 # TODO: no random network (Done)
 # TODO: Record seed, etc. (later on)
@@ -515,7 +515,7 @@ if __name__ == '__main__':
     nrnd_size = pass_size+mut_size
     rnd_size = ens_size-pass_size-mut_size
     
-    MKP = 0.3 # Probability of changing rate constants on mutation. Probability of changing reaction is 1 - MKP
+    MKP = 0. # Probability of changing rate constants on mutation. Probability of changing reaction is 1 - MKP
     rateStep = 0.1 # Stepsize for mutating rate constants. Actual stepsize is rateConstant*rateStep
     w1 = 1.5 # Weight for control coefficients when calculating the distance
     w2 = 1.0 # Weight for steady-state and flux when calculating the distance
@@ -525,7 +525,7 @@ if __name__ == '__main__':
     NOISE = False # Flag for adding Gaussian noise to steady-state and control coefficiant values
     noise_std = 0.1 # Standard deviation of Gaussian noise
     
-    PLOT = True # Flag for plots
+    PLOT = False # Flag for plots
     SAVE = False # Flag for saving plots
 
 #%%

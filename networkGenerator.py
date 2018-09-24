@@ -194,7 +194,7 @@ def getFullStoichiometryMatrix(reactionList):
             product2 = reactionListCopy[index][2][1]
             st[product2, index] = st[product2, index] + 1
 
-    return st   
+    return st
         
 
 # Removes boundary or orphan species from stoichiometry matrix
