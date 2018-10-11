@@ -463,7 +463,7 @@ if __name__ == '__main__':
 #%% Settings
     model_type = 'FFL' # 'FFL', 'Linear', 'Nested', 'Branched'
     
-    n_gen = 10 # Number of generations
+    n_gen = 100 # Number of generations
     ens_size = 100 # Size of output ensemble
     pass_size = int(ens_size/10) #20 # Size of models passed on the next generation without mutation
     mut_size = int(ens_size/2) #100
@@ -660,8 +660,12 @@ if __name__ == '__main__':
             ens_prob = np.divide(ens_inv, np.sum(ens_inv))
             mut_ind = np.random.choice(np.arange(pass_size, ens_size), size=mut_size, replace=False, p=ens_prob)
         else:
-            mut_p = 1/ens_dist/np.sum(1/ens_dist)
-            mut_ind = np.sort(np.random.choice(np.arange(ens_size), size=mut_size, replace=False, p=mut_p))
+            minind = np.argsort(ens_dist)[:pass_size]
+            tarind = np.delete(np.arange(ens_size), minind)
+            mut_p = 1/ens_dist[tarind]/np.sum(1/ens_dist[tarind])
+            mut_ind = np.random.choice(tarind, size=mut_size-pass_size, 
+                                               replace=False, p=mut_p)
+            mut_ind = np.append(mut_ind, minind)
             mut_ind_inv = np.setdiff1d(np.arange(ens_size), mut_ind)
         
         eval_dist, eval_model = mutate_and_evaluate(ens_model[mut_ind], ens_dist[mut_ind])
