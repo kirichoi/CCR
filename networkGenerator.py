@@ -65,22 +65,24 @@ def generateReactionList(nSpecies, nReactions):
     for r in range(nReactions):
         rct = [col[1] for col in reactionList]
         prd = [col[2] for col in reactionList]
-        rateConstant = np.random.uniform(1e-3, 1.)
+        rateConstant = 0.5#np.random.uniform(1e-3, 1.)
         rt = pickReactionType()
         if rt == TReactionType.UNIUNI:
             # UniUni
-            rct_prd = np.random.choice(np.arange(nSpecies), size=2, replace=False)
+            rct_id = np.random.choice(np.arange(nSpecies), size=1)
+            prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
             
             # Search for potentially identical reactions
-            all_rct = [i for i, x in enumerate(rct) if x == [rct_prd[0]]]
-            all_prd = [i for i, x in enumerate(prd) if x == [rct_prd[1]]]
+            all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
+            all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
             
             while len(set(all_rct) & set(all_prd)) > 0:
-                rct_prd = np.random.choice(np.arange(nSpecies), size=2, replace=False)
-                all_rct = [i for i, x in enumerate(rct) if x == [rct_prd[0]]]
-                all_prd = [i for i, x in enumerate(prd) if x == [rct_prd[1]]]
+                rct_id = np.random.choice(np.arange(nSpecies), size=1)
+                prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
+                all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
+                all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
             
-            reactionList.append ([rt, [rct_prd[0]], [rct_prd[1]], rateConstant]) 
+            reactionList.append ([rt, [rct_id[0]], [prd_id[0]], rateConstant]) 
 
         elif rt == TReactionType.BIUNI:
             # BiUni

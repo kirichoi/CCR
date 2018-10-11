@@ -21,11 +21,10 @@ def f1(k_list, *args):
     
     args[0].reset()
     
-    for i in range(5):
-        args[0].model[realGlobalParameterIds[i]] = k_list[i]
-        
+    args[0].setValues(realGlobalParameterIds, k_list)
+    
     ss = args[0].steadyStateSolver
-    ss.allow_approx = False
+    ss.allow_approx = True
     ss.allow_presimulation = False
     
     try:
@@ -46,7 +45,7 @@ def callbackF(X, convergence=0.):
     print(str(counts) + ", " + str(countf))
     return False
 
-def mutate_and_evaluate(listantStr, listdist, mut_ind):
+def mutate_and_evaluate(listantStr, listdist):
     global countf
     global counts
     
@@ -56,9 +55,6 @@ def mutate_and_evaluate(listantStr, listdist, mut_ind):
     for m in mut_range:
         antimony.loadAntimonyString(listantStr[m])
         module = antimony.getModuleNames()[-1]
-        
-        rct = np.array(antimony.getReactantNames(module)).tolist()
-        prd = np.array(antimony.getProductNames(module)).tolist()
         
         r = te.loada(listantStr[m])
         param_val = r.getGlobalParameterValues()
@@ -72,195 +68,201 @@ def mutate_and_evaluate(listantStr, listdist, mut_ind):
         stt = [[],[],[]]
         st = ens_st[0]
         
-        n = 0
+        o = 0
         
-        while (st in ens_st and n < maxIter_mut):
-            while len(stt[1]) != realNumFloating or len(stt[2]) != realNumBoundary:
-                r_idx = np.random.randint(0, nr)
-                rt = ng.pickReactionType()
-                if rt == ng.TReactionType.UNIUNI:
-                    # UniUni
-                    rct_prd = np.random.choice(np.arange(ns), size=2, replace=False)
-                    
-                    # Search for potentially identical reactions
-                    all_rct = [i for i, x in enumerate(rct) if x == ['S'+str(rct_prd[0])]]
-                    all_prd = [i for i, x in enumerate(prd) if x == ['S'+str(rct_prd[1])]]
-                    
-                    while len(set(all_rct) & set(all_prd)) > 0:
-                        rct_prd = np.random.choice(np.arange(ns), size=2, replace=False)
-                        all_rct = [i for i, x in enumerate(rct) if x == ['S'+str(rct_prd[0])]]
-                        all_prd = [i for i, x in enumerate(prd) if x == ['S'+str(rct_prd[1])]]
-                    
-                    rct[r_idx] = ["S" + str(rct_prd[0])]
-                    prd[r_idx] = ["S" + str(rct_prd[1])]
-                    
-                elif rt == ng.TReactionType.BIUNI:
-                    # BiUni
-                    # Pick two reactants
-                    rct_id = np.random.choice(np.arange(ns), size=2, replace=True)
-                    # pick a product but only products that don't include the reactants
-                    prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
-                    
-                     # Search for potentially identical reactions
-                    all_rct = [i for i, x in enumerate(rct) if x == ('S'+str(rct_id[0]),
-                                                       'S'+str(rct_id[1])) or x == ('S'+str(rct_id[1]), 'S'+str(rct_id[0]))]
-                    all_prd = [i for i, x in enumerate(prd) if x == ['S'+str(prd_id[0])]]
-                    
-                    while len(set(all_rct) & set(all_prd)) > 0:
-                        rct_id = np.random.choice(np.arange(ns), size=2, replace=True)
-                        prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
-                        all_rct = [i for i, x in enumerate(rct) if x == ('S'+str(rct_id[0]),
-                                                       'S'+str(rct_id[1])) or x == ('S'+str(rct_id[1]), 'S'+str(rct_id[0]))]
-                        all_prd = [i for i, x in enumerate(prd) if x == ['S'+str(prd_id[0])]]
-                    
-                    rct[r_idx] = ["S" + str(rct_id[0]), "S" + str(rct_id[1])]
-                    prd[r_idx] = ["S" + str(prd_id[0])]
-                    
-                elif rt == ng.TReactionType.UNIBI:
-                    # UniBi
+        while ((stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or st in ens_st) and (o < maxIter_mut)):
+            #TODO: pick based on difference in control coefficients (Done)
+            rct = np.array(antimony.getReactantNames(module)).tolist()
+            prd = np.array(antimony.getProductNames(module)).tolist()
+            
+            tempdiff = np.max(np.abs(realConcCC - 
+                    r.getUnscaledConcentrationControlCoefficientMatrix()), axis=0)
+            r_idx = np.random.choice(np.arange(nr), p=tempdiff/np.sum(tempdiff))
+            rt = ng.pickReactionType()
+            if rt == ng.TReactionType.UNIUNI:
+                # TODO: pick reactants and products based on control coefficients
+                # UniUni
+                rct_id = np.random.choice(np.arange(ns), size=1)
+                prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
+                
+                # Search for potentially identical reactions
+                all_rct = [i for i, x in enumerate(rct) if x == ['S'+str(rct_id[0])]]
+                all_prd = [i for i, x in enumerate(prd) if x == ['S'+str(prd_id[0])]]
+                
+                while (len(set(all_rct) & set(all_prd)) > 0):
                     rct_id = np.random.choice(np.arange(ns), size=1)
-                    # pick a product but only products that don't include the reactant
-                    prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2, replace=True)
-                    
-                    # Search for potentially identical reactions
+                    prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
+                    all_rct = [i for i, x in enumerate(rct) if x == ['S'+str(rct_id[0])]]
+                    all_prd = [i for i, x in enumerate(prd) if x == ['S'+str(prd_id[0])]]
+                
+                rct[r_idx] = ["S" + str(rct_id[0])]
+                prd[r_idx] = ["S" + str(prd_id[0])]
+                
+            elif rt == ng.TReactionType.BIUNI:
+                # BiUni
+                # Pick two reactants
+                rct_id = np.random.choice(np.arange(ns), size=2, replace=True)
+                # pick a product but only products that don't include the reactants
+                prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
+                
+                 # Search for potentially identical reactions
+                all_rct = [i for i, x in enumerate(rct) if x == ('S'+str(rct_id[0]),
+                                    'S'+str(rct_id[1])) or x == ('S'+str(rct_id[1]), 
+                                    'S'+str(rct_id[0]))]
+                all_prd = [i for i, x in enumerate(prd) if x == ['S'+str(prd_id[0])]]
+                
+                while (len(set(all_rct) & set(all_prd)) > 0):
+                    rct_id = np.random.choice(np.arange(ns), size=2, replace=True)
+                    prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
+                    all_rct = [i for i, x in enumerate(rct) if x == ('S'+str(rct_id[0]),
+                                        'S'+str(rct_id[1])) or x == ('S'+str(rct_id[1]), 
+                                        'S'+str(rct_id[0]))]
+                    all_prd = [i for i, x in enumerate(prd) if x == ['S'+str(prd_id[0])]]
+                
+                rct[r_idx] = ["S" + str(rct_id[0]), "S" + str(rct_id[1])]
+                prd[r_idx] = ["S" + str(prd_id[0])]
+                
+            elif rt == ng.TReactionType.UNIBI:
+                # UniBi
+                rct_id = np.random.choice(np.arange(ns), size=1)
+                # pick a product but only products that don't include the reactant
+                prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2,
+                                          replace=True)
+                
+                # Search for potentially identical reactions
+                all_rct = [i for i, x in enumerate(rct) if x == ['S'+str(rct_id[0])]]
+                all_prd = [i for i, x in enumerate(prd) if x == ('S'+str(prd_id[0]),
+                                    'S'+str(prd_id[1])) or x == ('S'+str(prd_id[1]), 
+                                    'S'+str(prd_id[0]))]
+                
+                while (len(set(all_rct) & set(all_prd)) > 0):
+                    rct_id = np.random.choice(np.arange(ns), size=1)
+                    prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), 
+                                              size=2, replace=True)
                     all_rct = [i for i, x in enumerate(rct) if x == ['S'+str(rct_id[0])]]
                     all_prd = [i for i, x in enumerate(prd) if x == ('S'+str(prd_id[0]),
-                                                       'S'+str(prd_id[1])) or x == ('S'+str(prd_id[1]), 'S'+str(prd_id[0]))]
-                    
-                    while len(set(all_rct) & set(all_prd)) > 0:
-                        rct_id = np.random.choice(np.arange(ns), size=1)
-                        prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2, replace=True)
-                        all_rct = [i for i, x in enumerate(rct) if x == ['S'+str(rct_id[0])]]
-                        all_prd = [i for i, x in enumerate(prd) if x == ('S'+str(prd_id[0]),
-                                                       'S'+str(prd_id[1])) or x == ('S'+str(prd_id[1]), 'S'+str(prd_id[0]))]
-                    
-                    rct[r_idx] = ["S" + str(rct_id[0])]
-                    prd[r_idx] = ["S" + str(prd_id[0]), "S" + str(prd_id[1])]
-                    
-                else:
-                    # BiBi
+                                        'S'+str(prd_id[1])) or x == ('S'+str(prd_id[1]), 
+                                        'S'+str(prd_id[0]))]
+                
+                rct[r_idx] = ["S" + str(rct_id[0])]
+                prd[r_idx] = ["S" + str(prd_id[0]), "S" + str(prd_id[1])]
+                
+            else:
+                # BiBi
+                rct_id = np.random.choice(np.arange(ns), size=2, replace=True)
+                # pick a product but only products that don't include the reactant
+                prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2, 
+                                          replace=True)
+                
+                # Search for potentially identical reactions
+                all_rct = [i for i, x in enumerate(rct) if x == ('S'+str(rct_id[0]),
+                                    'S'+str(rct_id[1])) or x == ('S'+str(rct_id[1]),
+                                    'S'+str(rct_id[0]))]
+                all_prd = [i for i, x in enumerate(prd) if x == ('S'+str(prd_id[0]),
+                                    'S'+str(prd_id[1])) or x == ('S'+str(prd_id[1]), 
+                                    'S'+str(prd_id[0]))]
+                
+                while (len(set(all_rct) & set(all_prd)) > 0):
                     rct_id = np.random.choice(np.arange(ns), size=2, replace=True)
-                    # pick a product but only products that don't include the reactant
-                    prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2, replace=True)
-                    
-                    # Search for potentially identical reactions
+                    prd_id = np.random.choice(np.delete(np.arange(ns), rct_id),
+                                              size=2, replace=True)
                     all_rct = [i for i, x in enumerate(rct) if x == ('S'+str(rct_id[0]),
-                                                       'S'+str(rct_id[1])) or x == ('S'+str(rct_id[1]), 'S'+str(rct_id[0]))]
+                                        'S'+str(rct_id[1])) or x == ('S'+str(rct_id[1]),
+                                        'S'+str(rct_id[0]))]
                     all_prd = [i for i, x in enumerate(prd) if x == ('S'+str(prd_id[0]),
-                                                       'S'+str(prd_id[1])) or x == ('S'+str(prd_id[1]), 'S'+str(prd_id[0]))]
-                    
-                    while len(set(all_rct) & set(all_prd)) > 0:
-                        rct_id = np.random.choice(np.arange(ns), size=2, replace=True)
-                        prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2, replace=True)
-                        all_rct = [i for i, x in enumerate(rct) if x == ('S'+str(rct_id[0]),
-                                                       'S'+str(rct_id[1])) or x == ('S'+str(rct_id[1]), 'S'+str(rct_id[0]))]
-                        all_prd = [i for i, x in enumerate(prd) if x == ('S'+str(prd_id[0]),
-                                                       'S'+str(prd_id[1])) or x == ('S'+str(prd_id[1]), 'S'+str(prd_id[0]))]
-                    
-                    rct[r_idx] = ["S" + str(rct_id[0]), "S" + str(rct_id[1])]
-                    prd[r_idx] = ["S" + str(prd_id[0]), "S" + str(prd_id[1])]
-                    
-                reactionList = []
-                for i in r_range:
-                    if len(rct[i]) == 1 and len(prd[i]) == 1:
-                        rtype = ng.TReactionType.UNIUNI
-                    elif len(rct[i]) == 1 and len(prd[i]) == 2:
-                        rtype = ng.TReactionType.UNIBI
-                    elif len(rct[i]) == 2 and len(prd[i]) == 1:
-                        rtype = ng.TReactionType.BIUNI
-                    else:
-                        rtype = ng.TReactionType.BIBI
-                    
-                    rct_ind = [s.replace('S', '') for s in rct[i]]
-                    rct_ind = list(map(int, rct_ind))
-                    prd_ind = [s.replace('S', '') for s in prd[i]]
-                    prd_ind = list(map(int, prd_ind))
-                    reactionList.append ([rtype, rct_ind, prd_ind, param_val[i]]) 
+                                        'S'+str(prd_id[1])) or x == ('S'+str(prd_id[1]),
+                                        'S'+str(prd_id[0]))]
                 
-                reactionList.insert(0, ns)
+                rct[r_idx] = ["S" + str(rct_id[0]), "S" + str(rct_id[1])]
+                prd[r_idx] = ["S" + str(prd_id[0]), "S" + str(prd_id[1])]
                 
-                st = ng.getFullStoichiometryMatrix(reactionList).tolist()
-                stt = ng.removeBoundaryNodes(np.array(st))
-            n += 1
+            reactionList = []
+            for i in r_range:
+                if len(rct[i]) == 1 and len(prd[i]) == 1:
+                    rtype = ng.TReactionType.UNIUNI
+                elif len(rct[i]) == 1 and len(prd[i]) == 2:
+                    rtype = ng.TReactionType.UNIBI
+                elif len(rct[i]) == 2 and len(prd[i]) == 1:
+                    rtype = ng.TReactionType.BIUNI
+                else:
+                    rtype = ng.TReactionType.BIBI
+                
+                rct_ind = [s.replace('S', '') for s in rct[i]]
+                rct_ind = list(map(int, rct_ind))
+                prd_ind = [s.replace('S', '') for s in prd[i]]
+                prd_ind = list(map(int, prd_ind))
+                reactionList.append([rtype, rct_ind, prd_ind, param_val[i]]) 
+            
+            reactionList.insert(0, ns)
+            
+            st = ng.getFullStoichiometryMatrix(reactionList).tolist()
+            stt = ng.removeBoundaryNodes(np.array(st))
+            o += 1
         
-        if n >= maxIter_mut:
+        if o >= maxIter_mut:
             eval_dist[m] = listdist[m]
             eval_model[m] = listantStr[m]
         else:
-            antStr = ng.genAntimonyScript(realFloatingIds, realBoundaryIds, stt[1], stt[2], reactionList, boundary_init=realBoundaryVal)
+            antStr = ng.genAntimonyScript(realFloatingIds, realBoundaryIds, 
+                                          stt[1], stt[2], reactionList, 
+                                          boundary_init=realBoundaryVal)
             try:
                 r = te.loada(antStr)
-                if (realFloatingIds == np.sort(r.getFloatingSpeciesIds())).all() and (realBoundaryIds == np.sort(r.getBoundarySpeciesIds())).all():
-                    
-                    counts = 0
-                    countf = 0
-                    
-                    res = scipy.optimize.differential_evolution(f1, args=(r,), bounds=p_bound, 
-                                                polish=False, tol=0.03)
+                counts = 0
+                countf = 0
+                res = scipy.optimize.differential_evolution(f1, args=(r,), 
+                            bounds=p_bound, seed=r_seed)                
+                r.reset()
+                r.setValues(realGlobalParameterIds, res.x)
                 
+                ss = r.steadyStateSolver
+                ss.allow_approx = True
+                ss.allow_presimulation = False
+                
+                r.steadyState()
+                SS_i = r.getFloatingSpeciesConcentrations()
+                if np.any(SS_i > 1e5):
                     r.reset()
-                    
-                    for i in range(5):
-                        r.model[realGlobalParameterIds[i]] = res.x[i]
-                    
-                    ss = r.steadyStateSolver
-                    ss.allow_approx = False
-                    ss.allow_presimulation = False
+                    ss.allow_presimulation = True
+                    ss.presimulation_time = 1000
                     r.steadyState()
                     SS_i = r.getFloatingSpeciesConcentrations()
-                    if np.any(SS_i > 1e5):
-                        r.reset()
-                        ss.allow_presimulation = True
-                        ss.presimulation_time = 1000
-                        r.steadyState()
-                        SS_i = r.getFloatingSpeciesConcentrations()
-                    if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
-                        antimony.clearPreviousLoads()
-    #                    if mut_ind[m] < pass_size:
-    #                        rnd_dist, rnd_model = random_gen(1)
-    #                        eval_dist[m] = rnd_dist[0]
-    #                        eval_model[m] = rnd_model[0]
-    #                    else:
-                        eval_dist[m] = listdist[m]
-                        eval_model[m] = listantStr[m]
-                    else:
-    #                    F_i = sr.getReactionRates()
-                        
-    #                    fluxCC_i = r.getScaledFluxControlCoefficientMatrix()
-    #                    fluxCC_i_row = fluxCC_i.rownames
-    #                    fluxCC_i_col = fluxCC_i.colnames
-    #                    fluxCC_i = fluxCC_i[np.argsort(fluxCC_i_row)]
-    #                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
-                        
-                        concCC_i = r.getUnscaledConcentrationControlCoefficientMatrix()
-                        concCC_i_row = concCC_i.rownames
-                        concCC_i_col = concCC_i.colnames
-                        concCC_i = concCC_i[np.argsort(concCC_i_row)]
-                        concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
-                        
-    #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
-    #                            + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                        dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
-                        
-                        antimony.clearPreviousLoads()
-                        if dist_i < listdist[m]:
-                            eval_dist[m] = dist_i
-                            eval_model[m] = r.getAntimony(current=True)
-                            ens_st.append(st)
-                        else:
-                            eval_dist[m] = listdist[m]
-                            eval_model[m] = listantStr[m]
-                else:
-                    antimony.clearPreviousLoads()
-    #                if mut_ind[m] < pass_size:
-    #                    rnd_dist, rnd_model = random_gen(1)
-    #                    eval_dist[m] = rnd_dist[0]
-    #                    eval_model[m] = rnd_model[0]
-    #                else:
+                if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
+#                    if mut_ind[m] < pass_size:
+#                        rnd_dist, rnd_model = random_gen(1)
+#                        eval_dist[m] = rnd_dist[0]
+#                        eval_model[m] = rnd_model[0]
+#                    else:
                     eval_dist[m] = listdist[m]
                     eval_model[m] = listantStr[m]
+                else:
+#                    F_i = sr.getReactionRates()
+                    
+#                    fluxCC_i = r.getScaledFluxControlCoefficientMatrix()
+#                    fluxCC_i_row = fluxCC_i.rownames
+#                    fluxCC_i_col = fluxCC_i.colnames
+#                    fluxCC_i = fluxCC_i[np.argsort(fluxCC_i_row)]
+#                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
+                    
+                    concCC_i = r.getUnscaledConcentrationControlCoefficientMatrix()
+                    concCC_i_row = concCC_i.rownames
+                    concCC_i_col = concCC_i.colnames
+                    concCC_i = concCC_i[np.argsort(concCC_i_row)]
+                    concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
+                    
+#                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
+#                            + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
+                    dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
+                    
+                    if dist_i < listdist[m]:
+                        eval_dist[m] = dist_i
+                        r.reset()
+                        eval_model[m] = r.getAntimony(current=True)
+                        ens_st.append(st)
+                    else:
+                        eval_dist[m] = listdist[m]
+                        eval_model[m] = listantStr[m]
             except:
-                antimony.clearPreviousLoads()
     #            if mut_ind[m] < pass_size:
     #                rnd_dist, rnd_model = random_gen(1)
     #                eval_dist[m] = rnd_dist[0]
@@ -268,9 +270,7 @@ def mutate_and_evaluate(listantStr, listdist, mut_ind):
     #            else:
                 eval_dist[m] = listdist[m]
                 eval_model[m] = listantStr[m]
-
-    print("Unique models: " + str(len(set(listantStr))))
-    print("Unique models: " + str(len(set(eval_model))))
+        antimony.clearPreviousLoads()
 
     return eval_dist, eval_model
 
@@ -289,70 +289,71 @@ def initialize():
     ens_st = []
     
     # Initial Random generation
-    while numGoodModels < ens_size:
+    while (numGoodModels < ens_size):
         #antStr = ng.generateLinearChainAnt(ns)
         rl = ng.generateReactionList(ns, nr)
         st = ng.getFullStoichiometryMatrix(rl).tolist()
+        stt = ng.removeBoundaryNodes(np.array(st))
         # Ensure no redundant model
-        while st in ens_st:
+        while (stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or st in ens_st):
             rl = ng.generateReactionList(ns, nr)
             st = ng.getFullStoichiometryMatrix(rl).tolist()
-        stt = ng.removeBoundaryNodes(np.array(st))
-        if len(stt[1]) == realNumFloating and len(stt[2]) == realNumBoundary:
-            antStr = ng.genAntimonyScript(realFloatingIds, realBoundaryIds, stt[1], stt[2], rl, boundary_init=realBoundaryVal)
-            try:
-                r = te.loada(antStr)
+            stt = ng.removeBoundaryNodes(np.array(st))
+        antStr = ng.genAntimonyScript(realFloatingIds, realBoundaryIds, stt[1],
+                                      stt[2], rl, boundary_init=realBoundaryVal)
+        try:
+            r = te.loada(antStr)
 
-                counts = 0
-                countf = 0
+            counts = 0
+            countf = 0
+            
+            res = scipy.optimize.differential_evolution(f1, args=(r,), 
+                               bounds=p_bound, seed=r_seed)
+            r.reset()
+            r.setValues(realGlobalParameterIds, res.x)
                 
-                res = scipy.optimize.differential_evolution(f1, args=(r,), bounds=p_bound,
-                                                polish=False, tol=0.03)
+            ss = r.steadyStateSolver
+            ss.allow_approx = True
+            ss.allow_presimulation = False
+            
+            r.steadyState()
+            SS_i = r.getFloatingSpeciesConcentrations()
+            # Buggy model
+            if np.any(SS_i > 1e5):
                 r.reset()
-                for i in range(5):
-                    r.model[realGlobalParameterIds[i]] = res.x[i]
-                    
-                ss = r.steadyStateSolver
-                ss.allow_approx = False
-                ss.allow_presimulation = False
-                
+                ss.allow_presimulation = True
+                ss.presimulation_time = 1000
                 r.steadyState()
                 SS_i = r.getFloatingSpeciesConcentrations()
-                # Buggy model
-                if np.any(SS_i > 1e5):
-                    r.reset()
-                    ss.allow_presimulation = True
-                    ss.presimulation_time = 1000
-                    r.steadyState()
-                    SS_i = r.getFloatingSpeciesConcentrations()
-                if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
-                    continue
-                else:
-                    #F_i = r.getReactionRates()
-                    
+            if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
+                continue
+            else:
+                #F_i = r.getReactionRates()
+                
 #                    fluxCC_i = r.getScaledFluxControlCoefficientMatrix()
 #                    fluxCC_i_row = fluxCC_i.rownames
 #                    fluxCC_i_col = fluxCC_i.colnames
 #                    fluxCC_i = fluxCC_i[np.argsort(fluxCC_i_row)]
 #                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
-                    
-                    concCC_i = r.getUnscaledConcentrationControlCoefficientMatrix()
-                    concCC_i_row = concCC_i.rownames
-                    concCC_i_col = concCC_i.colnames
-                    concCC_i = concCC_i[np.argsort(concCC_i_row)]
-                    concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
-                    
+                
+                concCC_i = r.getUnscaledConcentrationControlCoefficientMatrix()
+                concCC_i_row = concCC_i.rownames
+                concCC_i_col = concCC_i.colnames
+                concCC_i = concCC_i[np.argsort(concCC_i_row)]
+                concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
+                
 #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
 #                        + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                    dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
-                    ens_dist[numGoodModels] = dist_i
-                    ens_model[numGoodModels] = r.getAntimony(current=True)
-                    ens_st.append(st)#[numGoodModels] = st
-                    
-                    numGoodModels = numGoodModels + 1
-            except:
-                numBadModels = numBadModels + 1
-            antimony.clearPreviousLoads()
+                dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
+                ens_dist[numGoodModels] = dist_i
+                r.reset()
+                ens_model[numGoodModels] = r.getAntimony(current=True)
+                ens_st.append(st)#[numGoodModels] = st
+                
+                numGoodModels = numGoodModels + 1
+        except:
+            numBadModels = numBadModels + 1
+        antimony.clearPreviousLoads()
         numIter = numIter + 1
         if int(numIter/1000) == (numIter/1000):
             print("Number of iterations = " + str(numIter))
@@ -365,25 +366,30 @@ def initialize():
     
     return ens_dist, ens_model, ens_st
 
-
-def random_gen(rnd_size):
+def random_gen(listAntStr, listDist):
     global countf
     global counts
     
-    numGoodModels = 0
+    rndSize = len(listDist)
     
-    rnd_dist = np.empty(rnd_size)
-    rnd_model = np.empty(rnd_size, dtype='object')
+    rnd_dist = np.empty(rndSize)
+    rnd_model = np.empty(rndSize, dtype='object')
     
-    while numGoodModels < rnd_size:
+    for l in range(rndSize):
+        d = 0
         rl = ng.generateReactionList(ns, nr)
         st = ng.getFullStoichiometryMatrix(rl).tolist()
+        stt = ng.removeBoundaryNodes(np.array(st))
         # Ensure no redundant models
-        while st in ens_st:
+        while ((stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or st in ens_st) and (d < maxIter_gen)):
             rl = ng.generateReactionList(ns, nr)
             st = ng.getFullStoichiometryMatrix(rl).tolist()
-        stt = ng.removeBoundaryNodes(np.array(st))
-        if len(stt[1]) == realNumFloating and len(stt[2]) == realNumBoundary:
+            stt = ng.removeBoundaryNodes(np.array(st))
+            d += 1
+        if d >= maxIter_gen:
+            rnd_dist[l] = listDist[l]
+            rnd_model[l] = listAntStr[l]
+        else:
             antStr = ng.genAntimonyScript(realFloatingIds, realBoundaryIds, stt[1], stt[2], rl, boundary_init=realBoundaryVal)
             try:
                 r = te.loada(antStr)
@@ -391,17 +397,15 @@ def random_gen(rnd_size):
                 counts = 0
                 countf = 0
                 
-                res = scipy.optimize.differential_evolution(f1, args=(r,), bounds=p_bound,
-                                                polish=False, tol=0.03)
-                
+                res = scipy.optimize.differential_evolution(f1, args=(r,), 
+                                        bounds=p_bound, seed=r_seed)
                 r.reset()
-                
-                for i in range(5):
-                    r.model[realGlobalParameterIds[i]] = res.x[i]
+                r.setValues(realGlobalParameterIds, res.x)
                 
                 ss = r.steadyStateSolver
-                ss.allow_approx = False
+                ss.allow_approx = True
                 ss.allow_presimulation = False
+                
                 r.steadyState()
                 SS_i = r.getFloatingSpeciesConcentrations()
                 if np.any(SS_i > 1e5):
@@ -411,7 +415,8 @@ def random_gen(rnd_size):
                     r.steadyState()
                     SS_i = r.getFloatingSpeciesConcentrations()
                 if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
-                    continue
+                    rnd_dist[l] = listDist[l]
+                    rnd_model[l] = listAntStr[l]
                 else:
 #                    F_i = r.getReactionRates()
                     
@@ -431,14 +436,18 @@ def random_gen(rnd_size):
 #                        + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
                     dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
                     
-                    rnd_dist[numGoodModels] = dist_i
-                    rnd_model[numGoodModels] = r.getAntimony(current=True)
-                    ens_st.append(st)
-                    
-                    numGoodModels = numGoodModels + 1
+                    if dist_i < listDist[l]:
+                        rnd_dist[l] = dist_i
+                        r.reset()
+                        rnd_model[l] = r.getAntimony(current=True)
+                        ens_st.append(st)
+                    else:
+                        rnd_dist[l] = listDist[l]
+                        rnd_model[l] = listAntStr[l]
             except:
-                continue
-            antimony.clearPreviousLoads()
+                rnd_dist[l] = listDist[l]
+                rnd_model[l] = listAntStr[l]
+        antimony.clearPreviousLoads()
     
     return rnd_dist, rnd_model
 
@@ -454,15 +463,13 @@ if __name__ == '__main__':
 #%% Settings
     model_type = 'FFL' # 'FFL', 'Linear', 'Nested', 'Branched'
     
-    n_gen = 4 # Number of generations
+    n_gen = 10 # Number of generations
     ens_size = 100 # Size of output ensemble
     pass_size = int(ens_size/10) #20 # Size of models passed on the next generation without mutation
     mut_size = int(ens_size/2) #100
-    nrnd_size = pass_size+mut_size
-    rnd_size = ens_size-pass_size-mut_size
     
-    maxIter_gen = 1000
-    maxIter_mut = 1000
+    maxIter_gen = 5000
+    maxIter_mut = 5000
     
 #    MKP = 0. # Probability of changing rate constants on mutation. Probability of changing reaction is 1 - MKP
 #    rateStep = 0.1 # Stepsize for mutating rate constants. Actual stepsize is rateConstant*rateStep
@@ -592,7 +599,9 @@ if __name__ == '__main__':
     realNumBoundary = realRR.getNumBoundarySpecies()
     realNumFloating = realRR.getNumFloatingSpecies()
     realFloatingIds = np.sort(realRR.getFloatingSpeciesIds())
+    realFloatingIdsInd = list(map(int, [s.strip('S') for s in realRR.getFloatingSpeciesIds()]))
     realBoundaryIds = np.sort(realRR.getBoundarySpeciesIds())
+    realBoundaryIdsInd = list(map(int,[s.strip('S') for s in realRR.getBoundarySpeciesIds()]))
     realBoundaryVal = realRR.getBoundarySpeciesConcentrations()
     realGlobalParameterIds = realRR.getGlobalParameterIds()
     
@@ -641,7 +650,6 @@ if __name__ == '__main__':
     
     print("Minimum distance: " + str(dist_top[0]))
     print("Average distance: " + str(np.average(dist_top)))
-    print("Unique models: " + str(len(set(ens_model))))
     best_dist.append(dist_top[0])
     avg_dist.append(np.average(dist_top))
     
@@ -653,27 +661,17 @@ if __name__ == '__main__':
             mut_ind = np.random.choice(np.arange(pass_size, ens_size), size=mut_size, replace=False, p=ens_prob)
         else:
             mut_p = 1/ens_dist/np.sum(1/ens_dist)
-            if mut_size > (ens_size)/2.:
-                mut_pair = np.random.choice(np.arange(ens_size), size=(mut_size, 2), replace=True)
-            else:
-                mut_ind = np.random.choice(np.arange(ens_size), size=(mut_size, 1), replace=False, p=mut_p)
-           # mut_ind = np.sort(mut_pair[np.arange(mut_size), np.argmin(dist_top[mut_pair], axis=1)])
-
-#        ens_model[:pass_size] = model_top[:pass_size]
-#        ens_dist[:pass_size] = dist_top[:pass_size]
+            mut_ind = np.sort(np.random.choice(np.arange(ens_size), size=mut_size, replace=False, p=mut_p))
+            mut_ind_inv = np.setdiff1d(np.arange(ens_size), mut_ind)
         
-        eval_dist, eval_model = mutate_and_evaluate(ens_model[mut_ind], ens_dist[mut_ind], mut_ind)
+        eval_dist, eval_model = mutate_and_evaluate(ens_model[mut_ind], ens_dist[mut_ind])
         
         ens_model[mut_ind] = eval_model
         ens_dist[mut_ind] = eval_dist
         
-        print("Unique models post mutation: " + str(len(set(ens_model))))
-        
-        rnd_dist, rnd_model = random_gen(rnd_size)
-        ens_model[nrnd_size:] = rnd_model
-        ens_dist[nrnd_size:] = rnd_dist
-        
-        #print("Unique models post random gen: " + str(len(set(ens_model))))
+        rnd_dist, rnd_model = random_gen(ens_model[mut_ind_inv], ens_dist[mut_ind_inv])
+        ens_model[mut_ind_inv] = rnd_model
+        ens_dist[mut_ind_inv] = rnd_dist
         
         dist_top_ind = np.argsort(ens_dist)
         dist_top = ens_dist[dist_top_ind]
