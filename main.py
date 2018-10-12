@@ -82,7 +82,9 @@ def mutate_and_evaluate(listantStr, listdist):
             if rt == ng.TReactionType.UNIUNI:
                 # TODO: pick reactants and products based on control coefficients
                 # UniUni
-                rct_id = np.random.choice(np.arange(ns), size=1)
+                posRctInd = np.append(np.array(realFloatingIdsInd)[np.nonzero(
+                        realConcCC[:,r_idx])[0]], np.array(realBoundaryIdsInd))
+                rct_id = np.random.choice(posRctInd, size=1)
                 prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
                 
                 # Search for potentially identical reactions
@@ -100,8 +102,10 @@ def mutate_and_evaluate(listantStr, listdist):
                 
             elif rt == ng.TReactionType.BIUNI:
                 # BiUni
+                posRctInd = np.append(np.array(realFloatingIdsInd)[np.nonzero(
+                        realConcCC[:,r_idx])[0]], np.array(realBoundaryIdsInd))
                 # Pick two reactants
-                rct_id = np.random.choice(np.arange(ns), size=2, replace=True)
+                rct_id = np.random.choice(posRctInd, size=2, replace=True)
                 # pick a product but only products that don't include the reactants
                 prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
                 
@@ -124,7 +128,9 @@ def mutate_and_evaluate(listantStr, listdist):
                 
             elif rt == ng.TReactionType.UNIBI:
                 # UniBi
-                rct_id = np.random.choice(np.arange(ns), size=1)
+                posRctInd = np.append(np.array(realFloatingIdsInd)[np.nonzero(
+                        realConcCC[:,r_idx])[0]], np.array(realBoundaryIdsInd))
+                rct_id = np.random.choice(posRctInd, size=1)
                 # pick a product but only products that don't include the reactant
                 prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2,
                                           replace=True)
@@ -149,7 +155,9 @@ def mutate_and_evaluate(listantStr, listdist):
                 
             else:
                 # BiBi
-                rct_id = np.random.choice(np.arange(ns), size=2, replace=True)
+                posRctInd = np.append(np.array(realFloatingIdsInd)[np.nonzero(
+                        realConcCC[:,r_idx])[0]], np.array(realBoundaryIdsInd))
+                rct_id = np.random.choice(posRctInd, size=2, replace=True)
                 # pick a product but only products that don't include the reactant
                 prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2, 
                                           replace=True)
@@ -461,19 +469,19 @@ if __name__ == '__main__':
     roadrunner.Config.setValue(roadrunner.Config.ROADRUNNER_DISABLE_WARNINGS, 3)
 
 #%% Settings
-    model_type = 'FFL' # 'FFL', 'Linear', 'Nested', 'Branched'
+    model_type = 'Linear' # 'FFL', 'Linear', 'Nested', 'Branched'
     
     n_gen = 100 # Number of generations
     ens_size = 100 # Size of output ensemble
-    pass_size = int(ens_size/10) #20 # Size of models passed on the next generation without mutation
-    mut_size = int(ens_size/2) #100
+    pass_size = int(ens_size/10) # Number of models passed on the next generation without mutation
+    mut_size = int(ens_size/2) # Number of models to mutate
     
-    maxIter_gen = 5000
-    maxIter_mut = 5000
+    maxIter_gen = 5000 # Maximum iteration allowed for random generation
+    maxIter_mut = 5000 # Maximum iteration allowed for mutation
     
 #    MKP = 0. # Probability of changing rate constants on mutation. Probability of changing reaction is 1 - MKP
 #    rateStep = 0.1 # Stepsize for mutating rate constants. Actual stepsize is rateConstant*rateStep
-    w1 = 1.5 # Weight for control coefficients when calculating the distance
+    w1 = 1.0 # Weight for control coefficients when calculating the distance
     w2 = 1.0 # Weight for steady-state and flux when calculating the distance
     
     r_seed = 123123 # random see
@@ -481,7 +489,7 @@ if __name__ == '__main__':
     NOISE = False # Flag for adding Gaussian noise to steady-state and control coefficiant values
     noise_std = 0.1 # Standard deviation of Gaussian noise
     
-    PLOT = False # Flag for plots
+    PLOT = True # Flag for plots
     SAVE = False # Flag for saving plots
 
 #%%
@@ -761,6 +769,15 @@ if __name__ == '__main__':
             plt.savefig(os.path.join('./parameter_rmse_' + model_type + '.pdf'), bbox_inches='tight')
         plt.show()
 
+        # Distances histogram
+        plt.hist(ens_dist, bins=25, density=True)
+        plt.xlabel("Distance", fontsize=15)
+        plt.ylabel("Normalized Frequency", fontsize=15)
+        plt.xticks(fontsize=15)
+        plt.yticks(fontsize=15)
+        if SAVE:
+            pass
+        plt.show()
 #%%
 
 
