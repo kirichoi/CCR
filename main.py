@@ -30,14 +30,14 @@ def f1(k_list, *args):
     try:
         r.steadyState()
         ccTest = args[0].getUnscaledConcentrationControlCoefficientMatrix()
-        dist_i = (np.linalg.norm(realConcCC - ccTest))
+        dist_obj = (np.linalg.norm(realConcCC - ccTest))
     except:
         countf += 1
-        dist_i = 10000
+        dist_obj = 10000
         
     counts += 1
     
-    return dist_i
+    return dist_obj
 
 def callbackF(X, convergence=0.):
     global counts
@@ -219,63 +219,62 @@ def mutate_and_evaluate(listantStr, listdist):
                 counts = 0
                 countf = 0
                 res = scipy.optimize.differential_evolution(f1, args=(r,), 
-                            bounds=p_bound, seed=r_seed)                
-                r.reset()
-                r.setValues(realGlobalParameterIds, res.x)
-                
-                ss = r.steadyStateSolver
-                ss.allow_approx = True
-                ss.allow_presimulation = False
-                
-                r.steadyState()
-                SS_i = r.getFloatingSpeciesConcentrations()
-                if np.any(SS_i > 1e5):
-                    r.reset()
-                    ss.allow_presimulation = True
-                    ss.presimulation_time = 1000
-                    r.steadyState()
-                    SS_i = r.getFloatingSpeciesConcentrations()
-                if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
-#                    if mut_ind[m] < pass_size:
-#                        rnd_dist, rnd_model = random_gen(1)
-#                        eval_dist[m] = rnd_dist[0]
-#                        eval_model[m] = rnd_model[0]
-#                    else:
+                            bounds=p_bound, maxiter=optiMaxIter, seed=r_seed)
+                if not res.success:
                     eval_dist[m] = listdist[m]
                     eval_model[m] = listantStr[m]
                 else:
-#                    F_i = sr.getReactionRates()
+                    r.reset()
+                    r.setValues(realGlobalParameterIds, res.x)
                     
-#                    fluxCC_i = r.getScaledFluxControlCoefficientMatrix()
-#                    fluxCC_i_row = fluxCC_i.rownames
-#                    fluxCC_i_col = fluxCC_i.colnames
-#                    fluxCC_i = fluxCC_i[np.argsort(fluxCC_i_row)]
-#                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
+                    ss = r.steadyStateSolver
+                    ss.allow_approx = True
+                    ss.allow_presimulation = False
                     
-                    concCC_i = r.getUnscaledConcentrationControlCoefficientMatrix()
-                    concCC_i_row = concCC_i.rownames
-                    concCC_i_col = concCC_i.colnames
-                    concCC_i = concCC_i[np.argsort(concCC_i_row)]
-                    concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
-                    
-#                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
-#                            + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                    dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
-                    
-                    if dist_i < listdist[m]:
-                        eval_dist[m] = dist_i
+                    r.steadyState()
+                    SS_i = r.getFloatingSpeciesConcentrations()
+                    if np.any(SS_i > 1e5):
                         r.reset()
-                        eval_model[m] = r.getAntimony(current=True)
-                        ens_st.append(st)
-                    else:
+                        ss.allow_presimulation = True
+                        ss.presimulation_time = 100
+                        r.steadyState()
+                        SS_i = r.getFloatingSpeciesConcentrations()
+                    if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
+    #                    if mut_ind[m] < pass_size:
+    #                        rnd_dist, rnd_model = random_gen(1)
+    #                        eval_dist[m] = rnd_dist[0]
+    #                        eval_model[m] = rnd_model[0]
+    #                    else:
                         eval_dist[m] = listdist[m]
                         eval_model[m] = listantStr[m]
+                    else:
+    #                    F_i = sr.getReactionRates()
+                        
+    #                    fluxCC_i = r.getScaledFluxControlCoefficientMatrix()
+    #                    fluxCC_i_row = fluxCC_i.rownames
+    #                    fluxCC_i_col = fluxCC_i.colnames
+    #                    fluxCC_i = fluxCC_i[np.argsort(fluxCC_i_row)]
+    #                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
+                        
+                        concCC_i = r.getUnscaledConcentrationControlCoefficientMatrix()
+                        concCC_i_row = concCC_i.rownames
+                        concCC_i_col = concCC_i.colnames
+                        concCC_i = concCC_i[np.argsort(concCC_i_row)]
+                        concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
+                        
+    #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
+    #                            + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
+                        dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
+                        
+                        if dist_i < listdist[m]:
+                            eval_dist[m] = dist_i
+                            r.reset()
+                            eval_model[m] = r.getAntimony(current=True)
+                            ens_st.append(st)
+                        else:
+                            eval_dist[m] = listdist[m]
+                            eval_model[m] = listantStr[m]
             except:
-    #            if mut_ind[m] < pass_size:
-    #                rnd_dist, rnd_model = random_gen(1)
-    #                eval_dist[m] = rnd_dist[0]
-    #                eval_model[m] = rnd_model[0]
-    #            else:
                 eval_dist[m] = listdist[m]
                 eval_model[m] = listantStr[m]
         antimony.clearPreviousLoads()
@@ -316,49 +315,52 @@ def initialize():
             countf = 0
             
             res = scipy.optimize.differential_evolution(f1, args=(r,), 
-                               bounds=p_bound, seed=r_seed)
-            r.reset()
-            r.setValues(realGlobalParameterIds, res.x)
-                
-            ss = r.steadyStateSolver
-            ss.allow_approx = True
-            ss.allow_presimulation = False
-            
-            r.steadyState()
-            SS_i = r.getFloatingSpeciesConcentrations()
-            # Buggy model
-            if np.any(SS_i > 1e5):
+                               bounds=p_bound, maxiter=optiMaxIter, seed=r_seed)
+            if not res.success:
+                numBadModels += 1
+            else:
                 r.reset()
-                ss.allow_presimulation = True
-                ss.presimulation_time = 1000
+                r.setValues(realGlobalParameterIds, res.x)
+                    
+                ss = r.steadyStateSolver
+                ss.allow_approx = True
+                ss.allow_presimulation = False
+                
                 r.steadyState()
                 SS_i = r.getFloatingSpeciesConcentrations()
-            if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
-                continue
-            else:
-                #F_i = r.getReactionRates()
-                
-#                    fluxCC_i = r.getScaledFluxControlCoefficientMatrix()
-#                    fluxCC_i_row = fluxCC_i.rownames
-#                    fluxCC_i_col = fluxCC_i.colnames
-#                    fluxCC_i = fluxCC_i[np.argsort(fluxCC_i_row)]
-#                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
-                
-                concCC_i = r.getUnscaledConcentrationControlCoefficientMatrix()
-                concCC_i_row = concCC_i.rownames
-                concCC_i_col = concCC_i.colnames
-                concCC_i = concCC_i[np.argsort(concCC_i_row)]
-                concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
-                
-#                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
-#                        + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
-                ens_dist[numGoodModels] = dist_i
-                r.reset()
-                ens_model[numGoodModels] = r.getAntimony(current=True)
-                ens_st.append(st)#[numGoodModels] = st
-                
-                numGoodModels = numGoodModels + 1
+                # Buggy model
+                if np.any(SS_i > 1e5):
+                    r.reset()
+                    ss.allow_presimulation = True
+                    ss.presimulation_time = 100
+                    r.steadyState()
+                    SS_i = r.getFloatingSpeciesConcentrations()
+                if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
+                    continue
+                else:
+                    #F_i = r.getReactionRates()
+                    
+    #                    fluxCC_i = r.getScaledFluxControlCoefficientMatrix()
+    #                    fluxCC_i_row = fluxCC_i.rownames
+    #                    fluxCC_i_col = fluxCC_i.colnames
+    #                    fluxCC_i = fluxCC_i[np.argsort(fluxCC_i_row)]
+    #                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
+                    
+                    concCC_i = r.getUnscaledConcentrationControlCoefficientMatrix()
+                    concCC_i_row = concCC_i.rownames
+                    concCC_i_col = concCC_i.colnames
+                    concCC_i = concCC_i[np.argsort(concCC_i_row)]
+                    concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
+                    
+    #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
+    #                        + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
+                    dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
+                    ens_dist[numGoodModels] = dist_i
+                    r.reset()
+                    ens_model[numGoodModels] = r.getAntimony(current=True)
+                    ens_st.append(st)#[numGoodModels] = st
+                    
+                    numGoodModels = numGoodModels + 1
         except:
             numBadModels = numBadModels + 1
         antimony.clearPreviousLoads()
@@ -375,6 +377,7 @@ def initialize():
     return ens_dist, ens_model, ens_st
 
 def random_gen(listAntStr, listDist):
+    # TODO: random_gen introduces models without steadystates! WTF?
     global countf
     global counts
     
@@ -406,52 +409,57 @@ def random_gen(listAntStr, listDist):
                 countf = 0
                 
                 res = scipy.optimize.differential_evolution(f1, args=(r,), 
-                                        bounds=p_bound, seed=r_seed)
-                r.reset()
-                r.setValues(realGlobalParameterIds, res.x)
-                
-                ss = r.steadyStateSolver
-                ss.allow_approx = True
-                ss.allow_presimulation = False
-                
-                r.steadyState()
-                SS_i = r.getFloatingSpeciesConcentrations()
-                if np.any(SS_i > 1e5):
-                    r.reset()
-                    ss.allow_presimulation = True
-                    ss.presimulation_time = 1000
-                    r.steadyState()
-                    SS_i = r.getFloatingSpeciesConcentrations()
-                if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
+                            bounds=p_bound, maxiter=optiMaxIter, seed=r_seed)
+                # Failed to find solution
+                if not res.success:
                     rnd_dist[l] = listDist[l]
                     rnd_model[l] = listAntStr[l]
                 else:
-#                    F_i = r.getReactionRates()
+                    r.reset()
+                    r.setValues(realGlobalParameterIds, res.x)
                     
-#                    fluxCC_i = r.getScaledFluxControlCoefficientMatrix()
-#                    fluxCC_i_row = fluxCC_i.rownames
-#                    fluxCC_i_col = fluxCC_i.colnames
-#                    fluxCC_i = fluxCC_i[np.argsort(fluxCC_i_row)]
-#                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
+                    ss = r.steadyStateSolver
+                    ss.allow_approx = True
+                    ss.allow_presimulation = False
                     
-                    concCC_i = r.getUnscaledConcentrationControlCoefficientMatrix()
-                    concCC_i_row = concCC_i.rownames
-                    concCC_i_col = concCC_i.colnames
-                    concCC_i = concCC_i[np.argsort(concCC_i_row)]
-                    concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
-                    
-#                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
-#                        + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                    dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
-                    
-                    if dist_i < listDist[l]:
-                        rnd_dist[l] = dist_i
+                    r.steadyState()
+                    SS_i = r.getFloatingSpeciesConcentrations()
+                    if np.any(SS_i > 1e5):
                         r.reset()
-                        rnd_model[l] = r.getAntimony(current=True)
-                        ens_st.append(st)
-                    else:
+                        ss.allow_presimulation = True
+                        ss.presimulation_time = 100
+                        r.steadyState()
+                        SS_i = r.getFloatingSpeciesConcentrations()
+                    if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
                         rnd_dist[l] = listDist[l]
                         rnd_model[l] = listAntStr[l]
+                    else:
+    #                    F_i = r.getReactionRates()
+                        
+    #                    fluxCC_i = r.getScaledFluxControlCoefficientMatrix()
+    #                    fluxCC_i_row = fluxCC_i.rownames
+    #                    fluxCC_i_col = fluxCC_i.colnames
+    #                    fluxCC_i = fluxCC_i[np.argsort(fluxCC_i_row)]
+    #                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
+                        
+                        concCC_i = r.getUnscaledConcentrationControlCoefficientMatrix()
+                        concCC_i_row = concCC_i.rownames
+                        concCC_i_col = concCC_i.colnames
+                        concCC_i = concCC_i[np.argsort(concCC_i_row)]
+                        concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
+                        
+    #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
+    #                        + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
+                        dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
+                        
+                        if dist_i < listDist[l]:
+                            rnd_dist[l] = dist_i
+                            r.reset()
+                            rnd_model[l] = r.getAntimony(current=True)
+                            ens_st.append(st)
+                        else:
+                            rnd_dist[l] = listDist[l]
+                            rnd_model[l] = listAntStr[l]
             except:
                 rnd_dist[l] = listDist[l]
                 rnd_model[l] = listAntStr[l]
@@ -478,18 +486,19 @@ if __name__ == '__main__':
     
     maxIter_gen = 5000 # Maximum iteration allowed for random generation
     maxIter_mut = 5000 # Maximum iteration allowed for mutation
+    optiMaxIter = 100 # Maximum iteraction allowed for optimizer
     
 #    MKP = 0. # Probability of changing rate constants on mutation. Probability of changing reaction is 1 - MKP
 #    rateStep = 0.1 # Stepsize for mutating rate constants. Actual stepsize is rateConstant*rateStep
     w1 = 1.0 # Weight for control coefficients when calculating the distance
     w2 = 1.0 # Weight for steady-state and flux when calculating the distance
     
-    r_seed = 123123 # random see
+    r_seed = 123123 # random seed
     r_roulette = False # Flag for using random roulette or best of pair for selection process
     NOISE = False # Flag for adding Gaussian noise to steady-state and control coefficiant values
     noise_std = 0.1 # Standard deviation of Gaussian noise
     
-    PLOT = True # Flag for plots
+    PLOT = False # Flag for plots
     SAVE = False # Flag for saving plots
 
 #%%
@@ -602,7 +611,7 @@ if __name__ == '__main__':
     realSS = realRR.steadyStateSolver
     realSS.allow_approx = False
     realSS.allow_presimulation = False
-    realSS.presimulation_time = 10000
+    realSS.presimulation_time = 100
     
     realNumBoundary = realRR.getNumBoundarySpecies()
     realNumFloating = realRR.getNumFloatingSpecies()
@@ -661,6 +670,8 @@ if __name__ == '__main__':
     best_dist.append(dist_top[0])
     avg_dist.append(np.average(dist_top))
     
+    breakFlag = False
+    
     # TODO: Remove for loop
     for n in n_range:
         if r_roulette:
@@ -681,6 +692,22 @@ if __name__ == '__main__':
         ens_model[mut_ind] = eval_model
         ens_dist[mut_ind] = eval_dist
         
+        for tt in range(len(mut_ind)):
+            r = te.loada(ens_model[mut_ind[tt]])
+            ss = r.steadyStateSolver
+            ss.allow_approx = True
+            ss.allow_presimulation = False
+            try:
+                r.steadyState()
+            except:
+                print("Failure detacted at mutation: ", mut_ind[tt])
+                print(np.sort(mut_ind))
+                breakFlag = True
+                break
+        
+        if breakFlag:
+            break
+        
         rnd_dist, rnd_model = random_gen(ens_model[mut_ind_inv], ens_dist[mut_ind_inv])
         ens_model[mut_ind_inv] = rnd_model
         ens_dist[mut_ind_inv] = rnd_dist
@@ -695,10 +722,26 @@ if __name__ == '__main__':
         best_dist.append(dist_top[0])
         avg_dist.append(np.average(dist_top))
         
+        for tt in range(len(mut_ind_inv)):
+            r = te.loada(ens_model[mut_ind_inv[tt]])
+            ss = r.steadyStateSolver
+            ss.allow_approx = True
+            ss.allow_presimulation = False
+            try:
+                r.steadyState()
+            except:
+                print("Failure detacted at random gen: ", mut_ind_inv[tt])
+                print(np.sort(mut_ind_inv))
+                breakFlag = True
+                break
+        
+        if breakFlag:
+            break
+        
         # Error check
         #if np.average(dist_top) > 10000:
             #break
-                
+
     print(time.time() - t1)
         
 #%%
