@@ -12,6 +12,7 @@ import numpy as np
 import antimony
 import scipy.optimize
 import networkGenerator as ng
+import plotting as pt
 import matplotlib.pyplot as plt
 import time
 
@@ -216,20 +217,25 @@ def mutate_and_evaluate(listantStr, listdist):
                                           boundary_init=realBoundaryVal)
             try:
                 r = te.loada(antStr)
+                
                 counts = 0
                 countf = 0
+                
+                # TODO: Check this is fine
+                ss = r.steadyStateSolver
+                ss.allow_approx = True
+                ss.allow_presimulation = False
+                r.steadyState()
+                
                 res = scipy.optimize.differential_evolution(f1, args=(r,), 
-                            bounds=p_bound, maxiter=optiMaxIter, seed=r_seed)
+                            bounds=p_bound, maxiter=optiMaxIter, tol=optiTol,
+                            polish=optiPolish, seed=r_seed)
                 if not res.success:
                     eval_dist[m] = listdist[m]
                     eval_model[m] = listantStr[m]
                 else:
                     r.reset()
                     r.setValues(realGlobalParameterIds, res.x)
-                    
-                    ss = r.steadyStateSolver
-                    ss.allow_approx = True
-                    ss.allow_presimulation = False
                     
                     r.steadyState()
                     SS_i = r.getFloatingSpeciesConcentrations()
@@ -240,11 +246,6 @@ def mutate_and_evaluate(listantStr, listdist):
                         r.steadyState()
                         SS_i = r.getFloatingSpeciesConcentrations()
                     if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
-    #                    if mut_ind[m] < pass_size:
-    #                        rnd_dist, rnd_model = random_gen(1)
-    #                        eval_dist[m] = rnd_dist[0]
-    #                        eval_model[m] = rnd_model[0]
-    #                    else:
                         eval_dist[m] = listdist[m]
                         eval_model[m] = listantStr[m]
                     else:
@@ -314,18 +315,21 @@ def initialize():
             counts = 0
             countf = 0
             
+            # TODO: Check this is fine
+            ss = r.steadyStateSolver
+            ss.allow_approx = True
+            ss.allow_presimulation = False
+            r.steadyState()
+            
             res = scipy.optimize.differential_evolution(f1, args=(r,), 
-                               bounds=p_bound, maxiter=optiMaxIter, seed=r_seed)
+                               bounds=p_bound, maxiter=optiMaxIter, tol=optiTol,
+                               polish=optiPolish, seed=r_seed)
             if not res.success:
                 numBadModels += 1
             else:
                 r.reset()
                 r.setValues(realGlobalParameterIds, res.x)
                     
-                ss = r.steadyStateSolver
-                ss.allow_approx = True
-                ss.allow_presimulation = False
-                
                 r.steadyState()
                 SS_i = r.getFloatingSpeciesConcentrations()
                 # Buggy model
@@ -408,8 +412,15 @@ def random_gen(listAntStr, listDist):
                 counts = 0
                 countf = 0
                 
+                # TODO: Check this is fine
+                ss = r.steadyStateSolver
+                ss.allow_approx = True
+                ss.allow_presimulation = False
+                r.steadyState()
+                
                 res = scipy.optimize.differential_evolution(f1, args=(r,), 
-                            bounds=p_bound, maxiter=optiMaxIter, seed=r_seed)
+                            bounds=p_bound, maxiter=optiMaxIter, tol=optiTol,
+                            polish=optiPolish, seed=r_seed)
                 # Failed to find solution
                 if not res.success:
                     rnd_dist[l] = listDist[l]
@@ -417,10 +428,6 @@ def random_gen(listAntStr, listDist):
                 else:
                     r.reset()
                     r.setValues(realGlobalParameterIds, res.x)
-                    
-                    ss = r.steadyStateSolver
-                    ss.allow_approx = True
-                    ss.allow_presimulation = False
                     
                     r.steadyState()
                     SS_i = r.getFloatingSpeciesConcentrations()
@@ -477,27 +484,33 @@ if __name__ == '__main__':
     roadrunner.Config.setValue(roadrunner.Config.ROADRUNNER_DISABLE_WARNINGS, 3)
 
 #%% Settings
+    # Test models
     model_type = 'Linear' # 'FFL', 'Linear', 'Nested', 'Branched'
     
+    # General settings
     n_gen = 100 # Number of generations
     ens_size = 100 # Size of output ensemble
     pass_size = int(ens_size/10) # Number of models passed on the next generation without mutation
     mut_size = int(ens_size/2) # Number of models to mutate
-    
     maxIter_gen = 5000 # Maximum iteration allowed for random generation
     maxIter_mut = 5000 # Maximum iteration allowed for mutation
-    optiMaxIter = 100 # Maximum iteraction allowed for optimizer
     
+    # Optimizer settings
+    optiMaxIter = 1000 # Maximum iteraction allowed for optimizer
+    optiTol = 0.01
+    optiPolish = True
 #    MKP = 0. # Probability of changing rate constants on mutation. Probability of changing reaction is 1 - MKP
 #    rateStep = 0.1 # Stepsize for mutating rate constants. Actual stepsize is rateConstant*rateStep
     w1 = 1.0 # Weight for control coefficients when calculating the distance
     w2 = 1.0 # Weight for steady-state and flux when calculating the distance
     
+    # Random settings
     r_seed = 123123 # random seed
     r_roulette = False # Flag for using random roulette or best of pair for selection process
     NOISE = False # Flag for adding Gaussian noise to steady-state and control coefficiant values
     noise_std = 0.1 # Standard deviation of Gaussian noise
     
+    # Plotting settings
     PLOT = False # Flag for plots
     SAVE = False # Flag for saving plots
 
@@ -692,21 +705,21 @@ if __name__ == '__main__':
         ens_model[mut_ind] = eval_model
         ens_dist[mut_ind] = eval_dist
         
-        for tt in range(len(mut_ind)):
-            r = te.loada(ens_model[mut_ind[tt]])
-            ss = r.steadyStateSolver
-            ss.allow_approx = True
-            ss.allow_presimulation = False
-            try:
-                r.steadyState()
-            except:
-                print("Failure detacted at mutation: ", mut_ind[tt])
-                print(np.sort(mut_ind))
-                breakFlag = True
-                break
-        
-        if breakFlag:
-            break
+#        for tt in range(len(mut_ind)):
+#            r = te.loada(ens_model[mut_ind[tt]])
+#            ss = r.steadyStateSolver
+#            ss.allow_approx = True
+#            ss.allow_presimulation = False
+#            try:
+#                r.steadyState()
+#            except:
+#                print("Failure detacted at mutation: ", mut_ind[tt])
+#                print(np.sort(mut_ind))
+#                breakFlag = True
+#                break
+#        
+#        if breakFlag:
+#            break
         
         rnd_dist, rnd_model = random_gen(ens_model[mut_ind_inv], ens_dist[mut_ind_inv])
         ens_model[mut_ind_inv] = rnd_model
@@ -716,27 +729,27 @@ if __name__ == '__main__':
         dist_top = ens_dist[dist_top_ind]
         model_top = ens_model[dist_top_ind]
         
-        print("In generation: " + str(n+1))
+        print("In generation: " + str(n + 1))
         print("Minimum distance: " + str(dist_top[0]))
         print("Average distance: " + str(np.average(dist_top)))
         best_dist.append(dist_top[0])
         avg_dist.append(np.average(dist_top))
         
-        for tt in range(len(mut_ind_inv)):
-            r = te.loada(ens_model[mut_ind_inv[tt]])
-            ss = r.steadyStateSolver
-            ss.allow_approx = True
-            ss.allow_presimulation = False
-            try:
-                r.steadyState()
-            except:
-                print("Failure detacted at random gen: ", mut_ind_inv[tt])
-                print(np.sort(mut_ind_inv))
-                breakFlag = True
-                break
-        
-        if breakFlag:
-            break
+#        for tt in range(len(mut_ind_inv)):
+#            r = te.loada(ens_model[mut_ind_inv[tt]])
+#            ss = r.steadyStateSolver
+#            ss.allow_approx = True
+#            ss.allow_presimulation = False
+#            try:
+#                r.steadyState()
+#            except:
+#                print("Failure detacted at random gen: ", mut_ind_inv[tt])
+#                print(np.sort(mut_ind_inv))
+#                breakFlag = True
+#                break
+#        
+#        if breakFlag:
+#            break
         
         # Error check
         #if np.average(dist_top) > 10000:
@@ -747,43 +760,12 @@ if __name__ == '__main__':
 #%%
     if PLOT:
         # Convergence
-        plt.plot(best_dist)
-        #plt.plot(avg_dist)
-        plt.xlabel("Generations", fontsize=15)
-        plt.ylabel("Distance", fontsize=15)
-        plt.xticks(fontsize=15)
-        plt.yticks(fontsize=15)
-        if SAVE:
-            plt.savefig(os.path.join('./convergence_' + model_type + '.pdf'), bbox_inches='tight')
-        plt.show()
+        pt.plot_progress(best_dist, model_type, SAVE)
+        pt.plot_progress(avg_dist, model_type, SAVE)
         # TODO: Add polishing with fast optimizer 
             
         # Average residual
-        r_real = te.loada(realModel)
-        result_real = r_real.simulate(0, 100, 100)
-        
-        top_result = []
-        top_diff = []
-        
-        for i in ens_range:
-            r = te.loada(ens_model[np.argsort(ens_dist)[i]])
-            top_sim = r.simulate(0, 100, 100)
-            top_result.append(top_sim)
-            top_diff.append(np.subtract(result_real[:,1:], top_sim[:,1:]))
-    
-        percentage = 0.1#float(pass_size)/ens_size
-        
-        ave_diff = np.average(top_diff[:int(ens_size*percentage)], axis=0)
-        
-        plt.plot(ave_diff)
-        plt.xlabel("Time (s)", fontsize=15)
-        plt.ylabel("Residual", fontsize=15)
-        plt.legend(["S1","S2","S3"])
-        plt.xticks(fontsize=15)
-        plt.yticks(fontsize=15)
-        if SAVE:
-            plt.savefig(os.path.join('./average_residual_' + model_type + '.pdf'), bbox_inches='tight')
-        plt.show()
+        pt.plot_residual(realModel, ens_model, ens_dist, model_type, SAVE)
         
         # RMSE histogram
         r_real = te.loada(realModel)
@@ -801,7 +783,7 @@ if __name__ == '__main__':
             except:
                 top_diff_k.append(np.sqrt(np.divide(np.sum(np.square(np.subtract(k_real, top_k[1:]))),len(k_real))))
         
-        krmse = top_diff_k[:int(ens_size*percentage)]
+        krmse = top_diff_k[:pass_size]
         
         plt.hist(krmse, bins=15, density=True)
         plt.xlabel("RMSE", fontsize=15)
@@ -812,15 +794,6 @@ if __name__ == '__main__':
             plt.savefig(os.path.join('./parameter_rmse_' + model_type + '.pdf'), bbox_inches='tight')
         plt.show()
 
-        # Distances histogram
-        plt.hist(ens_dist, bins=25, density=True)
-        plt.xlabel("Distance", fontsize=15)
-        plt.ylabel("Normalized Frequency", fontsize=15)
-        plt.xticks(fontsize=15)
-        plt.yticks(fontsize=15)
-        if SAVE:
-            pass
-        plt.show()
 #%%
 
 
