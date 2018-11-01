@@ -13,6 +13,8 @@ import antimony
 import scipy.optimize
 import networkGenerator as ng
 import plotting as pt
+import ioutils
+import analysis
 import matplotlib.pyplot as plt
 import time
 
@@ -40,11 +42,13 @@ def f1(k_list, *args):
     
     return dist_obj
 
+
 def callbackF(X, convergence=0.):
     global counts
     global countf
     print(str(counts) + ", " + str(countf))
     return False
+
 
 def mutate_and_evaluate(listantStr, listdist):
     global countf
@@ -60,19 +64,15 @@ def mutate_and_evaluate(listantStr, listdist):
         r = te.loada(listantStr[m])
         param_val = r.getGlobalParameterValues()
         
-        # TODO: Remove part mutation (done)
-        # TODO: multiply rate constants by 0.1 , 0.5 etc. (randomize direction for each rate constants?) (done)
-        # TODO: randomly choose between  rate constants and reactions (done)
         # TODO: change initial boundary species in similar manner (maybe)
         # TODO: For top performers, only mutate rate constants
-        # TODO: assert unique reactions (Done)
         stt = [[],[],[]]
         st = ens_st[0]
         
         o = 0
         
-        while ((stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or st in ens_st) and (o < maxIter_mut)):
-            #TODO: pick based on difference in control coefficients (Done)
+        while ((stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or
+                st in ens_st) and (o < maxIter_mut)):
             rct = np.array(antimony.getReactantNames(module)).tolist()
             prd = np.array(antimony.getProductNames(module)).tolist()
             
@@ -282,8 +282,7 @@ def mutate_and_evaluate(listantStr, listdist):
 
     return eval_dist, eval_model
 
-# TODO: assert the same number of bounary and floating species (Done)
-# TODO: Weighting for control coefficients and steady-states/fluxes? (Done)
+
 def initialize():
     global countf
     global counts
@@ -380,6 +379,7 @@ def initialize():
     
     return ens_dist, ens_model, ens_st
 
+
 def random_gen(listAntStr, listDist):
     # TODO: random_gen introduces models without steadystates! WTF?
     global countf
@@ -396,7 +396,8 @@ def random_gen(listAntStr, listDist):
         st = ng.getFullStoichiometryMatrix(rl).tolist()
         stt = ng.removeBoundaryNodes(np.array(st))
         # Ensure no redundant models
-        while ((stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or st in ens_st) and (d < maxIter_gen)):
+        while ((stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or
+                st in ens_st) and (d < maxIter_gen)):
             rl = ng.generateReactionList(ns, nr)
             st = ng.getFullStoichiometryMatrix(rl).tolist()
             stt = ng.removeBoundaryNodes(np.array(st))
@@ -405,7 +406,8 @@ def random_gen(listAntStr, listDist):
             rnd_dist[l] = listDist[l]
             rnd_model[l] = listAntStr[l]
         else:
-            antStr = ng.genAntimonyScript(realFloatingIds, realBoundaryIds, stt[1], stt[2], rl, boundary_init=realBoundaryVal)
+            antStr = ng.genAntimonyScript(realFloatingIds, realBoundaryIds, 
+                            stt[1], stt[2], rl, boundary_init=realBoundaryVal)
             try:
                 r = te.loada(antStr)
                 
@@ -474,18 +476,20 @@ def random_gen(listAntStr, listDist):
     
     return rnd_dist, rnd_model
 
-# TODO: no random network (Done)
 # TODO: Record seed, etc. (later on)
-# TODO: Exclude best performing model from mutation (Done)
-# TODO: change selection process (Pick pair and choose better one) (Done)
 # TODO: simulated annealing (multiply to fitness for rate constants)
 # TODO: Identical distance is possible even though the model is different. Add bindary counting to distance?
 if __name__ == '__main__':
     roadrunner.Config.setValue(roadrunner.Config.ROADRUNNER_DISABLE_WARNINGS, 3)
 
 #%% Settings
+    
+    # Input data
+    INPUT = None
+    READ_SETTINGS = None
+    
     # Test models
-    model_type = 'Linear' # 'FFL', 'Linear', 'Nested', 'Branched'
+    modelType = 'FFL' # 'FFL', 'Linear', 'Nested', 'Branched'
     
     # General settings
     n_gen = 100 # Number of generations
@@ -511,113 +515,17 @@ if __name__ == '__main__':
     noise_std = 0.1 # Standard deviation of Gaussian noise
     
     # Plotting settings
-    PLOT = False # Flag for plots
-    SAVE = False # Flag for saving plots
-
+    PLOT = True # Flag for plots
+    SAVE_PLOT = False # Flag for saving plots
+    
+    # Data settings
+    EXPORT_OUTPUT = True # Flag for saving collected models
+    EXPORT_SETTINGS = False # Flag for saving current settings
+    EXPORT_PATH = './output' # Path to save the output
+    
 #%%
-    if model_type == 'Linear':
-        # Linear    
-        realModel = """
-        var S1, S2, S3, S4;
-        const S0, S5;
-        J0: S0 -> S1; k0*S0;
-        J1: S1 -> S2; k1*S1;
-        J2: S2 -> S3; k2*S2;
-        J3: S3 -> S4; k3*S3;
-        J4: S4 -> S5; k4*S4;
-       
-        k0 = 0.285822003905
-        k1 = 0.571954691013
-        k2 = 0.393173236422
-        k3 = 0.75830845241
-        k4 = 0.27503984992
-       
-        S0 = 4
-        S5 = 5
-        S1 = 0
-        S2 = 0
-        S3 = 0
-        S4 = 0
-        """
-    elif model_type == 'Nested':
-        # Nested
-        realModel = """
-        var S1, S2, S3;
-        const S0, S4;
-        J0: S0 -> S1; k0*S0;
-        J1: S1 -> S2; k1*S1;
-        J2: S2 -> S1; k2*S2;
-        J3: S1 -> S3; k3*S1;
-        J4: S3 -> S1; k4*S3;
-        J5: S3 -> S4; k5*S3;
-       
-        k0 = 0.285822003905
-        k1 = 0.571954691013
-        k2 = 0.393173236422
-        k3 = 0.75830845241
-        k4 = 0.148522702962
-        k5 = 0.348927696783
-       
-        S0 = 3
-        S4 = 5
-        S1 = 0
-        S2 = 0
-        S3 = 0
-        """
-    elif model_type == 'FFL':
-        # FFL    
-        realModel = """
-        var S1, S2, S3;
-        const S0, S4;
-        J0: S0 -> S1; k0*S0;
-        J1: S1 -> S2; k1*S1;
-        J2: S2 -> S3; k2*S2;
-        J3: S3 -> S4; k3*S3;
-        J4: S1 -> S3; k4*S1;
-       
-        k0 = 0.285822003905
-        k1 = 0.571954691013
-        k2 = 0.393173236422
-        k3 = 0.75830845241
-        k4 = 0.148522702962
-       
-        S0 = 3
-        S4 = 5
-        S1 = 0
-        S2 = 0
-        S3 = 0
-        """
-    elif model_type == 'Branched':
-        #Branched
-        realModel = """
-        var S1, S2, S3, S4, S5;
-        const S0, S6;
-        J0: S0 -> S1; k0*S0;
-        J1: S1 -> S2; k1*S1;
-        J2: S1 -> S3; k2*S1;
-        J3: S3 -> S4; k3*S3;
-        J4: S3 -> S5; k4*S3;
-        J5: S2 -> S6; k5*S2;
-        J6: S4 -> S6; k6*S4;
-        J7: S5 -> S6; k7*S5;
-       
-        k0 = 0.285822003905
-        k1 = 0.571954691013
-        k2 = 0.393173236422
-        k3 = 0.75830845241
-        k4 = 0.148522702962
-        k5 = 0.348927696783
-        k6 = 0.572677236248
-        k7 = 0.497208763889
-       
-        S0 = 4
-        S6 = 3
-        S1 = 0
-        S2 = 0
-        S3 = 0
-        S4 = 0
-        S5 = 0
-        """
+    # Using one of the test models
+    realModel = ioutils.testModels(modelType)
     
     realRR = te.loada(realModel)
     
@@ -657,6 +565,7 @@ if __name__ == '__main__':
     nr = realRR.getNumReactions() # Number of reactions    
     
 #%%
+    # Define seed and ranges
     np.random.seed(r_seed)
     
     best_dist = []
@@ -672,6 +581,7 @@ if __name__ == '__main__':
 #%%
     t1 = time.time()
     
+    # Initialize
     ens_dist, ens_model, ens_st = initialize()
     
     dist_top_ind = np.argsort(ens_dist)
@@ -690,7 +600,8 @@ if __name__ == '__main__':
         if r_roulette:
             ens_inv = np.divide(1, dist_top[pass_size:])
             ens_prob = np.divide(ens_inv, np.sum(ens_inv))
-            mut_ind = np.random.choice(np.arange(pass_size, ens_size), size=mut_size, replace=False, p=ens_prob)
+            mut_ind = np.random.choice(np.arange(pass_size, ens_size), 
+                                       size=mut_size, replace=False, p=ens_prob)
         else:
             minind = np.argsort(ens_dist)[:pass_size]
             tarind = np.delete(np.arange(ens_size), minind)
@@ -755,18 +666,39 @@ if __name__ == '__main__':
         #if np.average(dist_top) > 10000:
             #break
 
-    print(time.time() - t1)
+    # Check run time
+    t2 = time.time()
+    print(t2 - t1)
+    
+    # Collect models
+    minInd, log_dens = analysis.selectWithKernalDensity(model_top, dist_top)
+    model_col = model_top[:minInd[0][0]]
+    dist_col = dist_top[:minInd[0][0]]
         
 #%%
+    EXPORT_PATH = os.path.join(os.getcwd(), EXPORT_PATH)
+    
     if PLOT:
         # Convergence
-        pt.plot_progress(best_dist, model_type, SAVE)
-        pt.plot_progress(avg_dist, model_type, SAVE)
+        if SAVE_PLOT:
+            pt.plotProgress(best_dist, SAVE_PATH=EXPORT_PATH)
+            pt.plotProgress(avg_dist, SAVE_PATH=EXPORT_PATH)
+        else:
+            pt.plotProgress(best_dist)
+            pt.plotProgress(avg_dist)
         # TODO: Add polishing with fast optimizer 
-            
-        # Average residual
-        pt.plot_residual(realModel, ens_model, ens_dist, model_type, SAVE)
         
+        # Average residual
+        if SAVE_PLOT:
+            pt.plotResidual(realModel, ens_model, ens_dist, SAVE_PATH=EXPORT_PATH)
+        else:
+            pt.plotResidual(realModel, ens_model, ens_dist)
+        # Distance histogram with KDE
+        if SAVE_PLOT:
+            pt.plotDistanceHistogramWithKDE(ens_dist, log_dens, minInd, SAVE_PATH=EXPORT_PATH)
+        else:
+            pt.plotDistanceHistogramWithKDE(ens_dist, log_dens, minInd)
+            
         # RMSE histogram
         r_real = te.loada(realModel)
         k_real = r_real.getGlobalParameterValues()
@@ -779,9 +711,11 @@ if __name__ == '__main__':
             top_k = r.getGlobalParameterValues()
             top_result_k.append(top_k)
             try:
-                top_diff_k.append(np.sqrt(np.divide(np.sum(np.square(np.subtract(k_real, top_k))),len(k_real))))
+                top_diff_k.append(np.sqrt(np.divide(np.sum(np.square(np.subtract(
+                        k_real, top_k))),len(k_real))))
             except:
-                top_diff_k.append(np.sqrt(np.divide(np.sum(np.square(np.subtract(k_real, top_k[1:]))),len(k_real))))
+                top_diff_k.append(np.sqrt(np.divide(np.sum(np.square(np.subtract(
+                        k_real, top_k[1:]))),len(k_real))))
         
         krmse = top_diff_k[:pass_size]
         
@@ -790,10 +724,30 @@ if __name__ == '__main__':
         plt.ylabel("Normalized Frequency", fontsize=15)
         plt.xticks(fontsize=15)
         plt.yticks(fontsize=15)
-        if SAVE:
-            plt.savefig(os.path.join('./parameter_rmse_' + model_type + '.pdf'), bbox_inches='tight')
+        if SAVE_PLOT:
+            plt.savefig(os.path.join('./parameter_rmse_.pdf'), bbox_inches='tight')
         plt.show()
-
+        
 #%%
+    if EXPORT_SETTINGS or EXPORT_OUTPUT:
+        settings = {}
+        settings['n_gen'] = n_gen
+        settings['ens_size'] = ens_size
+        settings['pass_size'] = pass_size
+        settings['mut_size'] = mut_size
+        settings['maxIter_gen'] = maxIter_gen
+        settings['maxIter_mut'] = maxIter_mut
+        settings['optiMaxIter'] = optiMaxIter
+        settings['optiTol'] = optiTol
+        settings['optiPolish'] = optiPolish
+        settings['r_seed'] = r_seed
+        
+        if EXPORT_SETTINGS:
+            ioutils.exportSettings(settings, path=EXPORT_PATH)
+        
+        if EXPORT_OUTPUT:
+            ioutils.exportOutputs(model_col, dist_col, best_dist, avg_dist, 
+                                  settings, t2-t1, path=EXPORT_PATH)
 
+        
 
