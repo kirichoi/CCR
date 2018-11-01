@@ -13,7 +13,7 @@ def exportSettings(settingsDict):
     """
     """
     
-def exportOutputs(models, dists, best_dist, avg_dist, settings, time, path=None):
+def exportOutputs(models, dists, best_dist, avg_dist, settings, time, ens_st, path=None):
     """
     """
     
@@ -24,6 +24,8 @@ def exportOutputs(models, dists, best_dist, avg_dist, settings, time, path=None)
         
     if not os.path.exists(outputdir):
         os.mkdir(outputdir)
+    if not os.path.exists(os.path.join(outputdir, 'models')):
+        os.mkdir(os.path.join(outputdir, 'models'))
     
     df = pd.DataFrame(np.array(dists))
     df.to_csv(os.path.join(outputdir, 'dist_collected.txt'))
@@ -38,10 +40,11 @@ def exportOutputs(models, dists, best_dist, avg_dist, settings, time, path=None)
     outputtxt.writelines('Ensemble Size: ' + str(settings['ens_size']) + '\n')
     outputtxt.writelines('No. of Collected Models: ' + str(len(models)) + '\n')
     outputtxt.writelines('Run Time: ' + str(time) + ' s\n')
+    outputtxt.writelines('No. Stoich. Analyzed: ' + str(len(ens_st)) + '\n')
     outputtxt.close()
     
     for i in range(len(models)):
-        modeltxt = open(os.path.join(outputdir, '/models/model_' + str(i) + '.txt'), 'w')
+        modeltxt = open(os.path.join(outputdir, 'models/model_' + str(i) + '.txt'), 'w')
         modeltxt.write(models[i])
         modeltxt.close()
     
@@ -50,13 +53,26 @@ def readSettings(settingsPath):
     """
     """
 
+
 def readModels(modelsPath):
     """
     """
+    
+    modelfiles = [f for f in os.listdir(modelsPath) if os.path.isfile(os.path.join(modelsPath, f))]
+
+    antstr = []
+    for i in modelfiles:
+        sbmlstr = open(os.path.join(modelsPath, i), 'r')
+        antstr.append(sbmlstr.read())
+        sbmlstr.close()
+    
+    return antstr
+
 
 def readData(dataPath):
     """
     """
+    
     
 def testModels(modelType):
     """
