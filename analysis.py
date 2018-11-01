@@ -27,6 +27,7 @@ def selectWithCutoff(model_top, dist_top, cutoff=0.1):
     
     return model_top[:coind], dist_top[:coind]
 
+
 def selectWithKernalDensity(model_top, dist_top):
     """
     Model selection rountine that returns a list of models based on the output
@@ -38,10 +39,98 @@ def selectWithKernalDensity(model_top, dist_top):
     
     dist_top_reshape = dist_top.reshape((100,1))
     
-    kde = neighbors.KernelDensity(kernel='tophat', bandwidth=0.1).fit(dist_top_reshape)
+    kde = neighbors.KernelDensity(kernel='tophat', bandwidth=0.005).fit(dist_top_reshape)
     
     log_dens = kde.score_samples(dist_top_reshape)
     
     minInd = signal.argrelextrema(log_dens, np.less)
     
     return minInd, log_dens
+
+
+def ensembleSteadyState(model_col):
+    """
+    """
+    
+    r = te.loada(model_col[0])
+    
+    SS = np.empty((len(model_col), r.getNumFloatingSpecies()))
+    
+    for i in range(len(model_col)):
+        r = te.loada(model_col[i])
+        r.steadyState()
+        SS[i] = r.getFloatingSpeciesConcentrations()
+    
+    return SS
+    
+    
+def ensembleReactionRates(model_col):
+    """
+    """
+    
+    r = te.loada(model_col[0])
+    
+    J = np.empty((len(model_col), r.getNumReactions()))
+    
+    for i in range(len(model_col)):
+        r = te.loada(model_col[i])
+        r.steadyState()
+        J[i] = r.getReactionRates()
+    
+    return J
+
+
+def ensembleTimeCourse(model_col):
+    """
+    """
+    
+    r = te.loada(model_col[0])
+    
+    T = np.empty((len(model_col), 100, r.getNumFloatingSpecies()))
+    
+    for i in range(len(model_col)):
+        r = te.loada(model_col[i])
+        T[i] = r.simulate(0, 100, 100)[:,1:]
+    
+    return T
+
+
+def ensembleFluxControlCoefficient(model_col):
+    """
+    """
+
+    r = te.loada(model_col[0])
+    
+    F = np.empty((len(model_col), r.getNumReactions(), r.getNumReactions()))
+    
+    for i in range(len(model_col)):
+        r = te.loada(model_col[i])
+        r.steadyState()
+        F[i] = r.getScaledFluxControlCoefficientMatrix()
+    
+    return F
+    
+
+def ensemblePredictionMetric(realModel, model_col, predictionMetric=['SS', 'R', 'T', 'F']):
+    """
+    """
+    
+    realSS, realR, realT, realF = testModelAnalysis(realModel)
+    
+    if 'SS' in predictionMetric:
+        SS = ensembleSteadyState(model_col)
+    elif 'R' in predictionMetric:
+        R = ensembleReactionRates(model_col)
+    elif 'T' in predictionMetric:
+        T = ensembleTimeCourse(model_col)
+    elif 'F' in predictionMetric:
+        F = ensembleFluxControlCoefficient(model_col)        
+    
+    
+def testModelAnalysis(realModel):
+    """
+    """
+    
+    
+
+
