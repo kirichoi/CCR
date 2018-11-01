@@ -28,9 +28,9 @@ def plotProgress(distance, SAVE_PATH=None):
     plt.yticks(fontsize=15)
     if SAVE_PATH is not None:
         if os.path.splitext(SAVE_PATH)[1] == '':
-            plt.savefig(SAVE_PATH, bbox_inches='tight')
+            plt.savefig(os.path.join(SAVE_PATH, 'images/convergence.pdf'), bbox_inches='tight')
         else:
-            plt.savefig(os.path.join(SAVE_PATH, '/images/convergence.pdf'), bbox_inches='tight')
+            plt.savefig(SAVE_PATH, bbox_inches='tight')
     plt.show()
 
 def plotResidual(realModel, ens_model, ens_dist, SAVE_PATH=None):
@@ -68,9 +68,9 @@ def plotResidual(realModel, ens_model, ens_dist, SAVE_PATH=None):
     plt.yticks(fontsize=15)
     if SAVE_PATH is not None:
         if os.path.splitext(SAVE_PATH)[1] == '':
-            plt.savefig(SAVE_PATH, bbox_inches='tight')
+            plt.savefig(os.path.join(SAVE_PATH, 'images/average_residual.pdf'), bbox_inches='tight')
         else:
-            plt.savefig(os.path.join(SAVE_PATH, '/images/average_residual.pdf'), bbox_inches='tight')
+            plt.savefig(SAVE_PATH, bbox_inches='tight')
     plt.show()
     
 def plotHistogram():
@@ -88,9 +88,9 @@ def plotDistanceHistogram(ens_dist, nbin=25, SAVE_PATH=None):
     plt.yticks(fontsize=15)
     if SAVE_PATH is not None:
         if os.path.splitext(SAVE_PATH)[1] == '':
-            plt.savefig(SAVE_PATH, bbox_inches='tight')
+            plt.savefig(os.path.join(SAVE_PATH, 'images/distance_hist.pdf'), bbox_inches='tight')
         else:
-            plt.savefig(os.path.join(SAVE_PATH, '/images/distance_hist.pdf'), bbox_inches='tight')
+            plt.savefig(SAVE_PATH, bbox_inches='tight')
     plt.show()
 
 def plotDistanceHistogramWithKDE(dist_top, log_dens, minInd, nbin=40, SAVE_PATH=None):
@@ -106,8 +106,8 @@ def plotDistanceHistogramWithKDE(dist_top, log_dens, minInd, nbin=40, SAVE_PATH=
     plt.yticks(fontsize=15)
     if SAVE_PATH is not None:
         if os.path.splitext(SAVE_PATH)[1] == '':
-            plt.savefig(SAVE_PATH, bbox_inches='tight')
+            plt.savefig(os.path.join(SAVE_PATH, 'images/distance_hist_w_KDE.pdf'), bbox_inches='tight')
         else:
-            plt.savefig(os.path.join(SAVE_PATH, '/images/distance_hist_w_KDE.pdf'), bbox_inches='tight')
+            plt.savefig(SAVE_PATH, bbox_inches='tight')
     plt.show()
 
