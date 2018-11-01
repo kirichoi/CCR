@@ -516,7 +516,7 @@ if __name__ == '__main__':
     
     # Plotting settings
     PLOT = True # Flag for plots
-    SAVE_PLOT = False # Flag for saving plots
+    SAVE_PLOT = True # Flag for saving plots
     
     # Data settings
     EXPORT_OUTPUT = True # Flag for saving collected models
@@ -681,8 +681,8 @@ if __name__ == '__main__':
     if PLOT:
         # Convergence
         if SAVE_PLOT:
-            pt.plotProgress(best_dist, SAVE_PATH=EXPORT_PATH)
-            pt.plotProgress(avg_dist, SAVE_PATH=EXPORT_PATH)
+            pt.plotProgress(best_dist, SAVE_PATH=os.path.join(EXPORT_PATH, '/images/convergence_best.pdf'))
+            pt.plotProgress(avg_dist, SAVE_PATH=os.path.join(EXPORT_PATH, '/images/convergence_avg.pdf'))
         else:
             pt.plotProgress(best_dist)
             pt.plotProgress(avg_dist)
@@ -690,14 +690,15 @@ if __name__ == '__main__':
         
         # Average residual
         if SAVE_PLOT:
-            pt.plotResidual(realModel, ens_model, ens_dist, SAVE_PATH=EXPORT_PATH)
+            pt.plotResidual(realModel, ens_model, ens_dist, SAVE_PATH=os.path.join(EXPORT_PATH, '/images/average_residual.pdf'))
         else:
             pt.plotResidual(realModel, ens_model, ens_dist)
+            
         # Distance histogram with KDE
         if SAVE_PLOT:
-            pt.plotDistanceHistogramWithKDE(ens_dist, log_dens, minInd, SAVE_PATH=EXPORT_PATH)
+            pt.plotDistanceHistogramWithKDE(dist_top, log_dens, minInd, SAVE_PATH=os.path.join(EXPORT_PATH, '/images/distance_hist_w_KDE.pdf'))
         else:
-            pt.plotDistanceHistogramWithKDE(ens_dist, log_dens, minInd)
+            pt.plotDistanceHistogramWithKDE(dist_top, log_dens, minInd)
             
         # RMSE histogram
         r_real = te.loada(realModel)
@@ -725,7 +726,7 @@ if __name__ == '__main__':
         plt.xticks(fontsize=15)
         plt.yticks(fontsize=15)
         if SAVE_PLOT:
-            plt.savefig(os.path.join('./parameter_rmse_.pdf'), bbox_inches='tight')
+            plt.savefig(os.path.join(EXPORT_PATH, '/images/parameter_rmse_.pdf'), bbox_inches='tight')
         plt.show()
         
 #%%

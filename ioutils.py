@@ -41,7 +41,7 @@ def exportOutputs(models, dists, best_dist, avg_dist, settings, time, path=None)
     outputtxt.close()
     
     for i in range(len(models)):
-        modeltxt = open(os.path.join(outputdir, 'model_' + str(i) + '.txt'), 'w')
+        modeltxt = open(os.path.join(outputdir, '/models/model_' + str(i) + '.txt'), 'w')
         modeltxt.write(models[i])
         modeltxt.close()
     
