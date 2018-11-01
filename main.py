@@ -32,7 +32,7 @@ def f1(k_list, *args):
     
     try:
         r.steadyState()
-        ccTest = args[0].getUnscaledConcentrationControlCoefficientMatrix()
+        ccTest = args[0].getScaledConcentrationControlCoefficientMatrix()
         dist_obj = (np.linalg.norm(realConcCC - ccTest))
     except:
         countf += 1
@@ -77,7 +77,7 @@ def mutate_and_evaluate(listantStr, listdist):
             prd = np.array(antimony.getProductNames(module)).tolist()
             
             tempdiff = np.max(np.abs(realConcCC - 
-                    r.getUnscaledConcentrationControlCoefficientMatrix()), axis=0)
+                    r.getScaledConcentrationControlCoefficientMatrix()), axis=0)
             r_idx = np.random.choice(np.arange(nr), p=tempdiff/np.sum(tempdiff))
             rt = ng.pickReactionType()
             if rt == ng.TReactionType.UNIUNI:
@@ -249,7 +249,7 @@ def mutate_and_evaluate(listantStr, listdist):
                         eval_dist[m] = listdist[m]
                         eval_model[m] = listantStr[m]
                     else:
-    #                    F_i = sr.getReactionRates()
+    #                    F_i = r.getReactionRates()
                         
     #                    fluxCC_i = r.getScaledFluxControlCoefficientMatrix()
     #                    fluxCC_i_row = fluxCC_i.rownames
@@ -257,7 +257,7 @@ def mutate_and_evaluate(listantStr, listdist):
     #                    fluxCC_i = fluxCC_i[np.argsort(fluxCC_i_row)]
     #                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
                         
-                        concCC_i = r.getUnscaledConcentrationControlCoefficientMatrix()
+                        concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
                         concCC_i_row = concCC_i.rownames
                         concCC_i_col = concCC_i.colnames
                         concCC_i = concCC_i[np.argsort(concCC_i_row)]
@@ -349,7 +349,7 @@ def initialize():
     #                    fluxCC_i = fluxCC_i[np.argsort(fluxCC_i_row)]
     #                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
                     
-                    concCC_i = r.getUnscaledConcentrationControlCoefficientMatrix()
+                    concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
                     concCC_i_row = concCC_i.rownames
                     concCC_i_col = concCC_i.colnames
                     concCC_i = concCC_i[np.argsort(concCC_i_row)]
@@ -451,7 +451,7 @@ def random_gen(listAntStr, listDist):
     #                    fluxCC_i = fluxCC_i[np.argsort(fluxCC_i_row)]
     #                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
                         
-                        concCC_i = r.getUnscaledConcentrationControlCoefficientMatrix()
+                        concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
                         concCC_i_row = concCC_i.rownames
                         concCC_i_col = concCC_i.colnames
                         concCC_i = concCC_i[np.argsort(concCC_i_row)]
@@ -548,7 +548,7 @@ if __name__ == '__main__':
     realFlux = realRR.getReactionRates()
     realRR.reset()
     realFluxCC = realRR.getScaledFluxControlCoefficientMatrix()
-    realConcCC = realRR.getUnscaledConcentrationControlCoefficientMatrix()
+    realConcCC = realRR.getScaledConcentrationControlCoefficientMatrix()
     
     # Ordering
     realFluxCCrow = realFluxCC.rownames
@@ -676,13 +676,17 @@ if __name__ == '__main__':
     dist_col = dist_top[:minInd[0][0]]
         
 #%%
-    EXPORT_PATH = os.path.join(os.getcwd(), EXPORT_PATH)
+    EXPORT_PATH = os.path.abspath(os.path.join(os.getcwd(), EXPORT_PATH))
     
     if PLOT:
         # Convergence
         if SAVE_PLOT:
-            pt.plotProgress(best_dist, SAVE_PATH=os.path.join(EXPORT_PATH, '/images/convergence_best.pdf'))
-            pt.plotProgress(avg_dist, SAVE_PATH=os.path.join(EXPORT_PATH, '/images/convergence_avg.pdf'))
+            if not os.path.exists(EXPORT_PATH):
+                os.mkdir(EXPORT_PATH)
+            if not os.path.exists(os.path.join(EXPORT_PATH, 'images')):
+                os.mkdir(os.path.join(EXPORT_PATH, 'images'))
+            pt.plotProgress(best_dist, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/convergence_best.pdf'))
+            pt.plotProgress(avg_dist, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/convergence_avg.pdf'))
         else:
             pt.plotProgress(best_dist)
             pt.plotProgress(avg_dist)
@@ -690,13 +694,13 @@ if __name__ == '__main__':
         
         # Average residual
         if SAVE_PLOT:
-            pt.plotResidual(realModel, ens_model, ens_dist, SAVE_PATH=os.path.join(EXPORT_PATH, '/images/average_residual.pdf'))
+            pt.plotResidual(realModel, ens_model, ens_dist, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/average_residual.pdf'))
         else:
             pt.plotResidual(realModel, ens_model, ens_dist)
             
         # Distance histogram with KDE
         if SAVE_PLOT:
-            pt.plotDistanceHistogramWithKDE(dist_top, log_dens, minInd, SAVE_PATH=os.path.join(EXPORT_PATH, '/images/distance_hist_w_KDE.pdf'))
+            pt.plotDistanceHistogramWithKDE(dist_top, log_dens, minInd, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/distance_hist_w_KDE.pdf'))
         else:
             pt.plotDistanceHistogramWithKDE(dist_top, log_dens, minInd)
             
@@ -726,7 +730,7 @@ if __name__ == '__main__':
         plt.xticks(fontsize=15)
         plt.yticks(fontsize=15)
         if SAVE_PLOT:
-            plt.savefig(os.path.join(EXPORT_PATH, '/images/parameter_rmse_.pdf'), bbox_inches='tight')
+            plt.savefig(os.path.join(EXPORT_PATH, 'images/parameter_rmse_.pdf'), bbox_inches='tight')
         plt.show()
         
 #%%
@@ -748,7 +752,7 @@ if __name__ == '__main__':
         
         if EXPORT_OUTPUT:
             ioutils.exportOutputs(model_col, dist_col, best_dist, avg_dist, 
-                                  settings, t2-t1, path=EXPORT_PATH)
+                                  settings, t2-t1, ens_st, path=EXPORT_PATH)
 
         
 
