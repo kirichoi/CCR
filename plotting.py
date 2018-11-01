@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sb
 
-def plot_progress(distance, model_type, SAVE=False):
+def plotProgress(distance, SAVE_PATH=None):
     """
     Plots convergence progress
     
@@ -26,11 +26,14 @@ def plot_progress(distance, model_type, SAVE=False):
     plt.ylabel("Distance", fontsize=15)
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
-    if SAVE:
-        plt.savefig(os.path.join('./convergence_' + model_type + '.pdf'), bbox_inches='tight')
+    if SAVE_PATH is not None:
+        if os.path.splitext(SAVE_PATH)[1] == '':
+            plt.savefig(SAVE_PATH, bbox_inches='tight')
+        else:
+            plt.savefig(os.path.join(SAVE_PATH, '/convergence.pdf'), bbox_inches='tight')
     plt.show()
 
-def plot_residual(realModel, ens_model, ens_dist, model_type, SAVE=False):
+def plotResidual(realModel, ens_model, ens_dist, SAVE_PATH=None):
     """
     Plots residuals
     
@@ -63,25 +66,48 @@ def plot_residual(realModel, ens_model, ens_dist, model_type, SAVE=False):
     plt.legend(r.getFloatingSpeciesIds())
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
-    if SAVE:
-        plt.savefig(os.path.join('./average_residual_' + model_type + '.pdf'), bbox_inches='tight')
+    if SAVE_PATH is not None:
+        if os.path.splitext(SAVE_PATH)[1] == '':
+            plt.savefig(SAVE_PATH, bbox_inches='tight')
+        else:
+            plt.savefig(os.path.join(SAVE_PATH, '/average_residual.pdf'), bbox_inches='tight')
     plt.show()
     
-def plot_histogram():
+def plotHistogram():
     """
     """
     
-def plot_distance_histogram(ens_dist, nbin=25, cutoff_val=None):
+def plotDistanceHistogram(ens_dist, nbin=25, SAVE_PATH=None):
     """
     """
     
     plt.hist(ens_dist, bins=nbin, density=True)
-    if cutoff_val is not None:
-        plt.vlines(cutoff_val, )
     plt.xlabel("Distance", fontsize=15)
     plt.ylabel("Normalized Frequency", fontsize=15)
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
+    if SAVE_PATH is not None:
+        if os.path.splitext(SAVE_PATH)[1] == '':
+            plt.savefig(SAVE_PATH, bbox_inches='tight')
+        else:
+            plt.savefig(os.path.join(SAVE_PATH, '/distance_hist.pdf'), bbox_inches='tight')
     plt.show()
+
+def plotDistanceHistogramWithKDE(ens_dist, log_dens, minInd, nbin=25, SAVE_PATH=None):
+    """
+    """
     
+    plt.hist(ens_dist, bins=nbin, density=True)
+    plt.vlines(ens_dist[minInd], 0, 1, linestyles='dashed')
+    plt.plot(np.exp(log_dens))
+    plt.xlabel("Distance", fontsize=15)
+    plt.ylabel("Normalized Frequency", fontsize=15)
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
+    if SAVE_PATH is not None:
+        if os.path.splitext(SAVE_PATH)[1] == '':
+            plt.savefig(SAVE_PATH, bbox_inches='tight')
+        else:
+            plt.savefig(os.path.join(SAVE_PATH, '/distance_hist.pdf'), bbox_inches='tight')
+    plt.show()
 
