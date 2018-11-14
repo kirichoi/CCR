@@ -221,7 +221,6 @@ def mutate_and_evaluate(listantStr, listdist):
                 counts = 0
                 countf = 0
                 
-                # TODO: Check this is fine
                 ss = r.steadyStateSolver
                 ss.allow_approx = True
                 ss.allow_presimulation = False
@@ -314,7 +313,6 @@ def initialize():
             counts = 0
             countf = 0
             
-            # TODO: Check this is fine
             ss = r.steadyStateSolver
             ss.allow_approx = True
             ss.allow_presimulation = False
@@ -381,7 +379,6 @@ def initialize():
 
 
 def random_gen(listAntStr, listDist):
-    # TODO: random_gen introduces models without steadystates! WTF?
     global countf
     global counts
     
@@ -414,7 +411,6 @@ def random_gen(listAntStr, listDist):
                 counts = 0
                 countf = 0
                 
-                # TODO: Check this is fine
                 ss = r.steadyStateSolver
                 ss.allow_approx = True
                 ss.allow_presimulation = False
@@ -476,9 +472,7 @@ def random_gen(listAntStr, listDist):
     
     return rnd_dist, rnd_model
 
-# TODO: Record seed, etc. (later on)
 # TODO: simulated annealing (multiply to fitness for rate constants)
-# TODO: Identical distance is possible even though the model is different. Add bindary counting to distance?
 if __name__ == '__main__':
     roadrunner.Config.setValue(roadrunner.Config.ROADRUNNER_DISABLE_WARNINGS, 3)
 
@@ -492,8 +486,8 @@ if __name__ == '__main__':
     modelType = 'FFL' # 'FFL', 'Linear', 'Nested', 'Branched'
     
     # General settings
-    n_gen = 100 # Number of generations
-    ens_size = 100 # Size of output ensemble
+    n_gen = 500 # Number of generations
+    ens_size = 250 # Size of output ensemble
     pass_size = int(ens_size/10) # Number of models passed on the next generation without mutation
     mut_size = int(ens_size/2) # Number of models to mutate
     maxIter_gen = 5000 # Maximum iteration allowed for random generation
@@ -521,238 +515,242 @@ if __name__ == '__main__':
     # Data settings
     EXPORT_OUTPUT = True # Flag for saving collected models
     EXPORT_SETTINGS = False # Flag for saving current settings
-    EXPORT_PATH = './output' # Path to save the output
+    EXPORT_PATH = './output1' # Path to save the output
     
-#%%
-    # Using one of the test models
-    realModel = ioutils.testModels(modelType)
+    # Flag to run algorithm
+    RUN = False
     
-    realRR = te.loada(realModel)
-    
-    realSS = realRR.steadyStateSolver
-    realSS.allow_approx = False
-    realSS.allow_presimulation = False
-    realSS.presimulation_time = 100
-    
-    realNumBoundary = realRR.getNumBoundarySpecies()
-    realNumFloating = realRR.getNumFloatingSpecies()
-    realFloatingIds = np.sort(realRR.getFloatingSpeciesIds())
-    realFloatingIdsInd = list(map(int, [s.strip('S') for s in realRR.getFloatingSpeciesIds()]))
-    realBoundaryIds = np.sort(realRR.getBoundarySpeciesIds())
-    realBoundaryIdsInd = list(map(int,[s.strip('S') for s in realRR.getBoundarySpeciesIds()]))
-    realBoundaryVal = realRR.getBoundarySpeciesConcentrations()
-    realGlobalParameterIds = realRR.getGlobalParameterIds()
-    
-    realRR.steadyState()
-    realSteadyState = realRR.getFloatingSpeciesConcentrations()
-    realFlux = realRR.getReactionRates()
-    realRR.reset()
-    realFluxCC = realRR.getScaledFluxControlCoefficientMatrix()
-    realConcCC = realRR.getScaledConcentrationControlCoefficientMatrix()
-    
-    # Ordering
-    realFluxCCrow = realFluxCC.rownames
-    realFluxCCcol = realFluxCC.colnames
-    realFluxCC = realFluxCC[np.argsort(realFluxCCrow)]
-    realFluxCC = realFluxCC[:,np.argsort(realFluxCCcol)]
-    
-    realConcCCrow = realConcCC.rownames
-    realConcCCcol = realConcCC.colnames
-    realConcCC = realConcCC[np.argsort(realConcCCrow)]
-    realConcCC = realConcCC[:,np.argsort(realConcCCcol)]
-    
-    ns = realNumBoundary + realNumFloating # Number of species
-    nr = realRR.getNumReactions() # Number of reactions    
-    
-#%%
-    # Define seed and ranges
-    np.random.seed(r_seed)
-    
-    best_dist = []
-    avg_dist = []
-    
-    n_range = range(1, n_gen)
-    ens_range = range(ens_size)
-    mut_range = range(mut_size)
-    r_range = range(nr)
-    
-    p_bound = [(1e-3, 1.)]*nr
-    
-#%%
-    t1 = time.time()
-    
-    # Initialize
-    ens_dist, ens_model, ens_st = initialize()
-    
-    dist_top_ind = np.argsort(ens_dist)
-    dist_top = ens_dist[dist_top_ind]
-    model_top = ens_model[dist_top_ind]
-    
-    print("Minimum distance: " + str(dist_top[0]))
-    print("Average distance: " + str(np.average(dist_top)))
-    best_dist.append(dist_top[0])
-    avg_dist.append(np.average(dist_top))
-    
-    breakFlag = False
-    
-    # TODO: Remove for loop
-    for n in n_range:
-        if r_roulette:
-            ens_inv = np.divide(1, dist_top[pass_size:])
-            ens_prob = np.divide(ens_inv, np.sum(ens_inv))
-            mut_ind = np.random.choice(np.arange(pass_size, ens_size), 
-                                       size=mut_size, replace=False, p=ens_prob)
-        else:
-            minind = np.argsort(ens_dist)[:pass_size]
-            tarind = np.delete(np.arange(ens_size), minind)
-            mut_p = 1/ens_dist[tarind]/np.sum(1/ens_dist[tarind])
-            mut_ind = np.random.choice(tarind, size=mut_size-pass_size, 
-                                               replace=False, p=mut_p)
-            mut_ind = np.append(mut_ind, minind)
-            mut_ind_inv = np.setdiff1d(np.arange(ens_size), mut_ind)
+    #%%
+    if RUN:
+        # Using one of the test models
+        realModel = ioutils.testModels(modelType)
         
-        eval_dist, eval_model = mutate_and_evaluate(ens_model[mut_ind], ens_dist[mut_ind])
+        realRR = te.loada(realModel)
         
-        ens_model[mut_ind] = eval_model
-        ens_dist[mut_ind] = eval_dist
+        realSS = realRR.steadyStateSolver
+        realSS.allow_approx = False
+        realSS.allow_presimulation = False
+        realSS.presimulation_time = 100
         
-#        for tt in range(len(mut_ind)):
-#            r = te.loada(ens_model[mut_ind[tt]])
-#            ss = r.steadyStateSolver
-#            ss.allow_approx = True
-#            ss.allow_presimulation = False
-#            try:
-#                r.steadyState()
-#            except:
-#                print("Failure detacted at mutation: ", mut_ind[tt])
-#                print(np.sort(mut_ind))
-#                breakFlag = True
-#                break
-#        
-#        if breakFlag:
-#            break
+        realNumBoundary = realRR.getNumBoundarySpecies()
+        realNumFloating = realRR.getNumFloatingSpecies()
+        realFloatingIds = np.sort(realRR.getFloatingSpeciesIds())
+        realFloatingIdsInd = list(map(int, [s.strip('S') for s in realRR.getFloatingSpeciesIds()]))
+        realBoundaryIds = np.sort(realRR.getBoundarySpeciesIds())
+        realBoundaryIdsInd = list(map(int,[s.strip('S') for s in realRR.getBoundarySpeciesIds()]))
+        realBoundaryVal = realRR.getBoundarySpeciesConcentrations()
+        realGlobalParameterIds = realRR.getGlobalParameterIds()
         
-        rnd_dist, rnd_model = random_gen(ens_model[mut_ind_inv], ens_dist[mut_ind_inv])
-        ens_model[mut_ind_inv] = rnd_model
-        ens_dist[mut_ind_inv] = rnd_dist
+        realRR.steadyState()
+        realSteadyState = realRR.getFloatingSpeciesConcentrations()
+        realFlux = realRR.getReactionRates()
+        realRR.reset()
+        realFluxCC = realRR.getScaledFluxControlCoefficientMatrix()
+        realConcCC = realRR.getScaledConcentrationControlCoefficientMatrix()
+        
+        # Ordering
+        realFluxCCrow = realFluxCC.rownames
+        realFluxCCcol = realFluxCC.colnames
+        realFluxCC = realFluxCC[np.argsort(realFluxCCrow)]
+        realFluxCC = realFluxCC[:,np.argsort(realFluxCCcol)]
+        
+        realConcCCrow = realConcCC.rownames
+        realConcCCcol = realConcCC.colnames
+        realConcCC = realConcCC[np.argsort(realConcCCrow)]
+        realConcCC = realConcCC[:,np.argsort(realConcCCcol)]
+        
+        ns = realNumBoundary + realNumFloating # Number of species
+        nr = realRR.getNumReactions() # Number of reactions    
+        
+    #%%
+        # Define seed and ranges
+        np.random.seed(r_seed)
+        
+        best_dist = []
+        avg_dist = []
+        
+        n_range = range(1, n_gen)
+        ens_range = range(ens_size)
+        mut_range = range(mut_size)
+        r_range = range(nr)
+        
+        p_bound = [(1e-3, 1.)]*nr
+        
+    #%%
+        t1 = time.time()
+        
+        # Initialize
+        ens_dist, ens_model, ens_st = initialize()
         
         dist_top_ind = np.argsort(ens_dist)
         dist_top = ens_dist[dist_top_ind]
         model_top = ens_model[dist_top_ind]
         
-        print("In generation: " + str(n + 1))
         print("Minimum distance: " + str(dist_top[0]))
         print("Average distance: " + str(np.average(dist_top)))
         best_dist.append(dist_top[0])
         avg_dist.append(np.average(dist_top))
         
-#        for tt in range(len(mut_ind_inv)):
-#            r = te.loada(ens_model[mut_ind_inv[tt]])
-#            ss = r.steadyStateSolver
-#            ss.allow_approx = True
-#            ss.allow_presimulation = False
-#            try:
-#                r.steadyState()
-#            except:
-#                print("Failure detacted at random gen: ", mut_ind_inv[tt])
-#                print(np.sort(mut_ind_inv))
-#                breakFlag = True
-#                break
-#        
-#        if breakFlag:
-#            break
+        breakFlag = False
         
-        # Error check
-        #if np.average(dist_top) > 10000:
-            #break
-
-    # Check run time
-    t2 = time.time()
-    print(t2 - t1)
-    
-    # Collect models
-    minInd, log_dens = analysis.selectWithKernalDensity(model_top, dist_top)
-    model_col = model_top[:minInd[0][0]]
-    dist_col = dist_top[:minInd[0][0]]
-        
-#%%
-    EXPORT_PATH = os.path.abspath(os.path.join(os.getcwd(), EXPORT_PATH))
-    
-    if PLOT:
-        # Convergence
-        if SAVE_PLOT:
-            if not os.path.exists(EXPORT_PATH):
-                os.mkdir(EXPORT_PATH)
-            if not os.path.exists(os.path.join(EXPORT_PATH, 'images')):
-                os.mkdir(os.path.join(EXPORT_PATH, 'images'))
-            pt.plotProgress(best_dist, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/convergence_best.pdf'))
-            pt.plotProgress(avg_dist, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/convergence_avg.pdf'))
-        else:
-            pt.plotProgress(best_dist)
-            pt.plotProgress(avg_dist)
-        # TODO: Add polishing with fast optimizer 
-        
-        # Average residual
-        if SAVE_PLOT:
-            pt.plotResidual(realModel, ens_model, ens_dist, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/average_residual.pdf'))
-        else:
-            pt.plotResidual(realModel, ens_model, ens_dist)
+        # TODO: Remove for loop
+        for n in n_range:
+            if r_roulette:
+                ens_inv = np.divide(1, dist_top[pass_size:])
+                ens_prob = np.divide(ens_inv, np.sum(ens_inv))
+                mut_ind = np.random.choice(np.arange(pass_size, ens_size), 
+                                           size=mut_size, replace=False, p=ens_prob)
+            else:
+                minind = np.argsort(ens_dist)[:pass_size]
+                tarind = np.delete(np.arange(ens_size), minind)
+                mut_p = 1/ens_dist[tarind]/np.sum(1/ens_dist[tarind])
+                mut_ind = np.random.choice(tarind, size=mut_size-pass_size, 
+                                                   replace=False, p=mut_p)
+                mut_ind = np.append(mut_ind, minind)
+                mut_ind_inv = np.setdiff1d(np.arange(ens_size), mut_ind)
             
-        # Distance histogram with KDE
-        if SAVE_PLOT:
-            pt.plotDistanceHistogramWithKDE(dist_top, log_dens, minInd, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/distance_hist_w_KDE.pdf'))
-        else:
-            pt.plotDistanceHistogramWithKDE(dist_top, log_dens, minInd)
+            eval_dist, eval_model = mutate_and_evaluate(ens_model[mut_ind], ens_dist[mut_ind])
             
-        # RMSE histogram
-        r_real = te.loada(realModel)
-        k_real = r_real.getGlobalParameterValues()
+            ens_model[mut_ind] = eval_model
+            ens_dist[mut_ind] = eval_dist
+            
+    #        for tt in range(len(mut_ind)):
+    #            r = te.loada(ens_model[mut_ind[tt]])
+    #            ss = r.steadyStateSolver
+    #            ss.allow_approx = True
+    #            ss.allow_presimulation = False
+    #            try:
+    #                r.steadyState()
+    #            except:
+    #                print("Failure detacted at mutation: ", mut_ind[tt])
+    #                print(np.sort(mut_ind))
+    #                breakFlag = True
+    #                break
+    #        
+    #        if breakFlag:
+    #            break
+            
+            rnd_dist, rnd_model = random_gen(ens_model[mut_ind_inv], ens_dist[mut_ind_inv])
+            ens_model[mut_ind_inv] = rnd_model
+            ens_dist[mut_ind_inv] = rnd_dist
+            
+            dist_top_ind = np.argsort(ens_dist)
+            dist_top = ens_dist[dist_top_ind]
+            model_top = ens_model[dist_top_ind]
+            
+            print("In generation: " + str(n + 1))
+            print("Minimum distance: " + str(dist_top[0]))
+            print("Average distance: " + str(np.average(dist_top)))
+            best_dist.append(dist_top[0])
+            avg_dist.append(np.average(dist_top))
+            
+    #        for tt in range(len(mut_ind_inv)):
+    #            r = te.loada(ens_model[mut_ind_inv[tt]])
+    #            ss = r.steadyStateSolver
+    #            ss.allow_approx = True
+    #            ss.allow_presimulation = False
+    #            try:
+    #                r.steadyState()
+    #            except:
+    #                print("Failure detacted at random gen: ", mut_ind_inv[tt])
+    #                print(np.sort(mut_ind_inv))
+    #                breakFlag = True
+    #                break
+    #        
+    #        if breakFlag:
+    #            break
+            
+            # Error check
+            #if np.average(dist_top) > 10000:
+                #break
+    
+        # Check run time
+        t2 = time.time()
+        print(t2 - t1)
         
-        top_result_k = []
-        top_diff_k = []
+        # Collect models
+        minInd, log_dens = analysis.selectWithKernalDensity(model_top, dist_top)
+        model_col = model_top[:minInd[0][0]]
+        dist_col = dist_top[:minInd[0][0]]
+            
+    #%%
+        EXPORT_PATH = os.path.abspath(os.path.join(os.getcwd(), EXPORT_PATH))
         
-        for i in ens_range:
-            r = te.loada(ens_model[np.argsort(ens_dist)[i]])
-            top_k = r.getGlobalParameterValues()
-            top_result_k.append(top_k)
-            try:
-                top_diff_k.append(np.sqrt(np.divide(np.sum(np.square(np.subtract(
-                        k_real, top_k))),len(k_real))))
-            except:
-                top_diff_k.append(np.sqrt(np.divide(np.sum(np.square(np.subtract(
-                        k_real, top_k[1:]))),len(k_real))))
-        
-        krmse = top_diff_k[:pass_size]
-        
-        plt.hist(krmse, bins=15, density=True)
-        plt.xlabel("RMSE", fontsize=15)
-        plt.ylabel("Normalized Frequency", fontsize=15)
-        plt.xticks(fontsize=15)
-        plt.yticks(fontsize=15)
-        if SAVE_PLOT:
-            plt.savefig(os.path.join(EXPORT_PATH, 'images/parameter_rmse_.pdf'), bbox_inches='tight')
-        plt.show()
-        
-#%%
-    if EXPORT_SETTINGS or EXPORT_OUTPUT:
-        settings = {}
-        settings['n_gen'] = n_gen
-        settings['ens_size'] = ens_size
-        settings['pass_size'] = pass_size
-        settings['mut_size'] = mut_size
-        settings['maxIter_gen'] = maxIter_gen
-        settings['maxIter_mut'] = maxIter_mut
-        settings['optiMaxIter'] = optiMaxIter
-        settings['optiTol'] = optiTol
-        settings['optiPolish'] = optiPolish
-        settings['r_seed'] = r_seed
-        
-        if EXPORT_SETTINGS:
-            ioutils.exportSettings(settings, path=EXPORT_PATH)
-        
-        if EXPORT_OUTPUT:
-            ioutils.exportOutputs(model_col, dist_col, best_dist, avg_dist, 
-                                  settings, t2-t1, ens_st, path=EXPORT_PATH)
+        if PLOT:
+            # Convergence
+            if SAVE_PLOT:
+                if not os.path.exists(EXPORT_PATH):
+                    os.mkdir(EXPORT_PATH)
+                if not os.path.exists(os.path.join(EXPORT_PATH, 'images')):
+                    os.mkdir(os.path.join(EXPORT_PATH, 'images'))
+                pt.plotProgress(best_dist, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/convergence_best.pdf'))
+                pt.plotProgress(avg_dist, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/convergence_avg.pdf'))
+            else:
+                pt.plotProgress(best_dist)
+                pt.plotProgress(avg_dist)
+            # TODO: Add polishing with fast optimizer 
+            
+            # Average residual
+            if SAVE_PLOT:
+                pt.plotResidual(realModel, ens_model, ens_dist, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/average_residual.pdf'))
+            else:
+                pt.plotResidual(realModel, ens_model, ens_dist)
+                
+            # Distance histogram with KDE
+            if SAVE_PLOT:
+                pt.plotDistanceHistogramWithKDE(dist_top, log_dens, minInd, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/distance_hist_w_KDE.pdf'))
+            else:
+                pt.plotDistanceHistogramWithKDE(dist_top, log_dens, minInd)
+                
+            # RMSE histogram
+            r_real = te.loada(realModel)
+            k_real = r_real.getGlobalParameterValues()
+            
+            top_result_k = []
+            top_diff_k = []
+            
+            for i in ens_range:
+                r = te.loada(ens_model[np.argsort(ens_dist)[i]])
+                top_k = r.getGlobalParameterValues()
+                top_result_k.append(top_k)
+                try:
+                    top_diff_k.append(np.sqrt(np.divide(np.sum(np.square(np.subtract(
+                            k_real, top_k))),len(k_real))))
+                except:
+                    top_diff_k.append(np.sqrt(np.divide(np.sum(np.square(np.subtract(
+                            k_real, top_k[1:]))),len(k_real))))
+            
+            krmse = top_diff_k[:pass_size]
+            
+            plt.hist(krmse, bins=15, density=True)
+            plt.xlabel("RMSE", fontsize=15)
+            plt.ylabel("Normalized Frequency", fontsize=15)
+            plt.xticks(fontsize=15)
+            plt.yticks(fontsize=15)
+            if SAVE_PLOT:
+                plt.savefig(os.path.join(EXPORT_PATH, 'images/parameter_rmse_.pdf'), bbox_inches='tight')
+            plt.show()
+            
+    #%%
+        if EXPORT_SETTINGS or EXPORT_OUTPUT:
+            settings = {}
+            settings['n_gen'] = n_gen
+            settings['ens_size'] = ens_size
+            settings['pass_size'] = pass_size
+            settings['mut_size'] = mut_size
+            settings['maxIter_gen'] = maxIter_gen
+            settings['maxIter_mut'] = maxIter_mut
+            settings['optiMaxIter'] = optiMaxIter
+            settings['optiTol'] = optiTol
+            settings['optiPolish'] = optiPolish
+            settings['r_seed'] = r_seed
+            
+            if EXPORT_SETTINGS:
+                ioutils.exportSettings(settings, path=EXPORT_PATH)
+            
+            if EXPORT_OUTPUT:
+                ioutils.exportOutputs(model_col, dist_col, best_dist, avg_dist, 
+                                      settings, t2-t1, ens_st, path=EXPORT_PATH)
 
         
 

@@ -15,6 +15,8 @@ def exportSettings(settingsDict):
     
 def exportOutputs(models, dists, best_dist, avg_dist, settings, time, ens_st, path=None):
     """
+    Export all outputs to specified path
+    
     """
     
     if path:
@@ -27,7 +29,7 @@ def exportOutputs(models, dists, best_dist, avg_dist, settings, time, ens_st, pa
     if not os.path.exists(os.path.join(outputdir, 'models')):
         os.mkdir(os.path.join(outputdir, 'models'))
     
-    df = pd.DataFrame(np.array(dists))
+    df = pd.DataFrame(np.array(dists), columns=['distance'])
     df.to_csv(os.path.join(outputdir, 'dist_collected.txt'))
     
     stat = pd.DataFrame(np.array([best_dist, avg_dist]).T, columns=['generation best', 'generation average'])
@@ -56,6 +58,10 @@ def readSettings(settingsPath):
 
 def readModels(modelsPath):
     """
+    Read model files
+    
+    :param modelsPath: path to a directory containing model files
+    :returns: list of model strings
     """
     
     modelfiles = [f for f in os.listdir(modelsPath) if os.path.isfile(os.path.join(modelsPath, f))]
@@ -71,11 +77,25 @@ def readModels(modelsPath):
 
 def readData(dataPath):
     """
+    Read data encoded in csv.
+    
+    :param dataPath: path to a csv file
+    :returns: DataFrame
     """
+    
+    if os.path.exists(dataPath):
+        df = pd.read_csv(dataPath)
+        return df
+    else:
+        raise Exception("Cannot find the file at the specified path")
     
     
 def testModels(modelType):
     """
+    Returns a test model
+    
+    :param modelType: model name, e.g. 'FFL', 'Linear', 'Nested', 'Branched'
+    :returns: Antimony string
     """
     
     if modelType == 'Linear':

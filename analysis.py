@@ -12,87 +12,11 @@ from scipy import signal
 from sklearn import neighbors
 import plotting as pt
 
-def selectWithCutoff(model_top, dist_top, cutoff=0.1):
-    """
-    Model selection routine that returns a list of models with distances within
-    the defined percentage.
-    
-    :param model_top: list of models sorted according to corresponding distances
-    :param dist_top: list of sorted distances
-    :param cutoff: percentage to cutoff
-    """
-    
-    coind = int(len(model_top)*cutoff)
-    pt.plot_distance_histogram(dist_top, cutoff_val=dist_top[coind])
-    
-    return model_top[:coind], dist_top[:coind]
 
+def getWeights(dist):
+    """
+    """
 
-def selectWithKernalDensity(model_top, dist_top):
-    """
-    Model selection rountine that returns a list of models based on the output
-    of kernal density estimation.
-    
-    :param model_top: list of models sorted according to corresponding distances
-    :param dist_top: list of sorted distances
-    """
-    
-    dist_top_reshape = dist_top.reshape((100,1))
-    
-    kde = neighbors.KernelDensity(kernel='tophat', bandwidth=0.005).fit(dist_top_reshape)
-    
-    log_dens = kde.score_samples(dist_top_reshape)
-    
-    minInd = signal.argrelextrema(log_dens, np.less)
-    
-    return minInd, log_dens
-
-
-def ensembleSteadyState(model_col):
-    """
-    """
-    
-    r = te.loada(model_col[0])
-    
-    SS = np.empty((len(model_col), r.getNumFloatingSpecies()))
-    
-    for i in range(len(model_col)):
-        r = te.loada(model_col[i])
-        r.steadyState()
-        SS[i] = r.getFloatingSpeciesConcentrations()
-    
-    return SS
-    
-    
-def ensembleReactionRates(model_col):
-    """
-    """
-    
-    r = te.loada(model_col[0])
-    
-    J = np.empty((len(model_col), r.getNumReactions()))
-    
-    for i in range(len(model_col)):
-        r = te.loada(model_col[i])
-        r.steadyState()
-        J[i] = r.getReactionRates()
-    
-    return J
-
-
-def ensembleTimeCourse(model_col):
-    """
-    """
-    
-    r = te.loada(model_col[0])
-    
-    T = np.empty((len(model_col), 100, r.getNumFloatingSpecies()))
-    
-    for i in range(len(model_col)):
-        r = te.loada(model_col[i])
-        T[i] = r.simulate(0, 100, 100)[:,1:]
-    
-    return T
 
 
 def ensembleFluxControlCoefficient(model_col):
@@ -125,12 +49,95 @@ def ensemblePredictionMetric(realModel, model_col, predictionMetric=['SS', 'R', 
         T = ensembleTimeCourse(model_col)
     elif 'F' in predictionMetric:
         F = ensembleFluxControlCoefficient(model_col)        
+
     
+def ensembleReactionRates(model_col):
+    """
+    """
+    
+    r = te.loada(model_col[0])
+    
+    J = np.empty((len(model_col), r.getNumReactions()))
+    
+    for i in range(len(model_col)):
+        r = te.loada(model_col[i])
+        r.steadyState()
+        J[i] = r.getReactionRates()
+    
+    return J
+
+
+def ensembleSteadyState(model_col):
+    """
+    """
+    
+    r = te.loada(model_col[0])
+    
+    SS = np.empty((len(model_col), r.getNumFloatingSpecies()))
+    
+    for i in range(len(model_col)):
+        r = te.loada(model_col[i])
+        r.steadyState()
+        SS[i] = r.getFloatingSpeciesConcentrations()
+    
+    return SS
+
+
+def ensembleTimeCourse(model_col):
+    """
+    """
+    
+    r = te.loada(model_col[0])
+    
+    T = np.empty((len(model_col), 100, r.getNumFloatingSpecies()))
+    
+    for i in range(len(model_col)):
+        r = te.loada(model_col[i])
+        T[i] = r.simulate(0, 100, 100)[:,1:]
+    
+    return T
+
+
+def selectWithCutoff(model_top, dist_top, cutoff=0.1):
+    """
+    Model selection routine that returns a list of models with distances within
+    the defined percentage.
+    
+    :param model_top: list of models sorted according to corresponding distances
+    :param dist_top: list of sorted distances
+    :param cutoff: percentage to cutoff
+    """
+    
+    coind = int(len(model_top)*cutoff)
+    pt.plot_distance_histogram(dist_top, cutoff_val=dist_top[coind])
+    
+    return model_top[:coind], dist_top[:coind]
+
+
+def selectWithKernalDensity(model_top, dist_top):
+    """
+    Model selection rountine that returns a list of models based on the output
+    of kernal density estimation.
+    
+    :param model_top: list of models sorted according to corresponding distances
+    :param dist_top: list of sorted distances
+    """
+    
+    dist_top_reshape = dist_top.reshape((len(model_top),1))
+    
+    kde = neighbors.KernelDensity(kernel='tophat', bandwidth=0.005).fit(dist_top_reshape)
+    
+    log_dens = kde.score_samples(dist_top_reshape)
+    
+    minInd = signal.argrelextrema(log_dens, np.less)
+    
+    return minInd, log_dens
+
     
 def testModelAnalysis(realModel):
     """
     """
     
-    
+
 
 
