@@ -78,7 +78,8 @@ def mutate_and_evaluate(listantStr, listdist):
             
             tempdiff = np.max(np.abs(realConcCC - 
                     r.getScaledConcentrationControlCoefficientMatrix()), axis=0)
-            r_idx = np.random.choice(np.arange(nr), p=tempdiff/np.sum(tempdiff))
+            
+            r_idx = np.random.choice(np.arange(nr), p=np.divide(tempdiff,np.sum(tempdiff)))
             rt = ng.pickReactionType()
             if rt == ng.TReactionType.UNIUNI:
                 # TODO: pick reactants and products based on control coefficients
@@ -257,23 +258,27 @@ def mutate_and_evaluate(listantStr, listdist):
     #                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
                         
                         concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
-                        concCC_i_row = concCC_i.rownames
-                        concCC_i_col = concCC_i.colnames
-                        concCC_i = concCC_i[np.argsort(concCC_i_row)]
-                        concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
-                        
-    #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
-    #                            + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                        dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
-                        
-                        if dist_i < listdist[m]:
-                            eval_dist[m] = dist_i
-                            r.reset()
-                            eval_model[m] = r.getAntimony(current=True)
-                            ens_st.append(st)
-                        else:
+                        if np.isnan(concCC_i).any():
                             eval_dist[m] = listdist[m]
                             eval_model[m] = listantStr[m]
+                        else:
+                            concCC_i_row = concCC_i.rownames
+                            concCC_i_col = concCC_i.colnames
+                            concCC_i = concCC_i[np.argsort(concCC_i_row)]
+                            concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
+                            
+        #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
+        #                            + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
+                            dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
+                            
+                            if dist_i < listdist[m]:
+                                eval_dist[m] = dist_i
+#                                r.reset()
+                                eval_model[m] = r.getAntimony(current=True)
+                                ens_st.append(st)
+                            else:
+                                eval_dist[m] = listdist[m]
+                                eval_model[m] = listantStr[m]
             except:
                 eval_dist[m] = listdist[m]
                 eval_model[m] = listantStr[m]
@@ -348,20 +353,23 @@ def initialize():
     #                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
                     
                     concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
-                    concCC_i_row = concCC_i.rownames
-                    concCC_i_col = concCC_i.colnames
-                    concCC_i = concCC_i[np.argsort(concCC_i_row)]
-                    concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                     
-    #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
-    #                        + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                    dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
-                    ens_dist[numGoodModels] = dist_i
-                    r.reset()
-                    ens_model[numGoodModels] = r.getAntimony(current=True)
-                    ens_st.append(st)#[numGoodModels] = st
-                    
-                    numGoodModels = numGoodModels + 1
+                    if np.isnan(concCC_i).any():
+                        continue
+                    else:
+                        concCC_i_row = concCC_i.rownames
+                        concCC_i_col = concCC_i.colnames
+                        concCC_i = concCC_i[np.argsort(concCC_i_row)]
+                        concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
+        #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
+        #                        + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
+                        dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
+                        ens_dist[numGoodModels] = dist_i
+#                        r.reset()
+                        ens_model[numGoodModels] = r.getAntimony(current=True)
+                        ens_st.append(st)#[numGoodModels] = st
+                        
+                        numGoodModels = numGoodModels + 1
         except:
             numBadModels = numBadModels + 1
         antimony.clearPreviousLoads()
@@ -448,23 +456,28 @@ def random_gen(listAntStr, listDist):
     #                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
                         
                         concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
-                        concCC_i_row = concCC_i.rownames
-                        concCC_i_col = concCC_i.colnames
-                        concCC_i = concCC_i[np.argsort(concCC_i_row)]
-                        concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                         
-    #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
-    #                        + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                        dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
-                        
-                        if dist_i < listDist[l]:
-                            rnd_dist[l] = dist_i
-                            r.reset()
-                            rnd_model[l] = r.getAntimony(current=True)
-                            ens_st.append(st)
-                        else:
+                        if np.isnan(concCC_i).any():
                             rnd_dist[l] = listDist[l]
                             rnd_model[l] = listAntStr[l]
+                        else:
+                            concCC_i_row = concCC_i.rownames
+                            concCC_i_col = concCC_i.colnames
+                            concCC_i = concCC_i[np.argsort(concCC_i_row)]
+                            concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
+                            
+        #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
+        #                        + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
+                            dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
+                            
+                            if dist_i < listDist[l]:
+                                rnd_dist[l] = dist_i
+#                                r.reset()
+                                rnd_model[l] = r.getAntimony(current=True)
+                                ens_st.append(st)
+                            else:
+                                rnd_dist[l] = listDist[l]
+                                rnd_model[l] = listAntStr[l]
             except:
                 rnd_dist[l] = listDist[l]
                 rnd_model[l] = listAntStr[l]
@@ -486,8 +499,8 @@ if __name__ == '__main__':
     modelType = 'FFL' # 'FFL', 'Linear', 'Nested', 'Branched'
     
     # General settings
-    n_gen = 500 # Number of generations
-    ens_size = 250 # Size of output ensemble
+    n_gen = 100 # Number of generations
+    ens_size = 100 # Size of output ensemble
     pass_size = int(ens_size/10) # Number of models passed on the next generation without mutation
     mut_size = int(ens_size/2) # Number of models to mutate
     maxIter_gen = 5000 # Maximum iteration allowed for random generation
@@ -506,7 +519,8 @@ if __name__ == '__main__':
     r_seed = 123123 # random seed
     r_roulette = False # Flag for using random roulette or best of pair for selection process
     NOISE = False # Flag for adding Gaussian noise to steady-state and control coefficiant values
-    noise_std = 0.1 # Standard deviation of Gaussian noise
+    ABS_NOISE_STD = 0.01 # Standard deviation of Gaussian noise
+    REL_NOISE_STD = 0.1 # Standard deviation of Gaussian noise
     
     # Plotting settings
     PLOT = True # Flag for plots
@@ -515,7 +529,7 @@ if __name__ == '__main__':
     # Data settings
     EXPORT_OUTPUT = True # Flag for saving collected models
     EXPORT_SETTINGS = False # Flag for saving current settings
-    EXPORT_PATH = './output1' # Path to save the output
+    EXPORT_PATH = './output' # Path to save the output
     
     # Flag to run algorithm
     RUN = False
@@ -560,8 +574,19 @@ if __name__ == '__main__':
         realConcCC = realConcCC[:,np.argsort(realConcCCcol)]
         
         ns = realNumBoundary + realNumFloating # Number of species
-        nr = realRR.getNumReactions() # Number of reactions    
+        nr = realRR.getNumReactions() # Number of reactions
         
+        print("Original Control Coefficients")
+        print(realConcCC)
+        
+        if NOISE:
+            for i in range(len(realConcCC)):
+                for j in range(len(realConcCC[i])):
+                    realConcCC[i][j] = (realConcCC[i][j] + np.random.normal(0,ABS_NOISE_STD) 
+                    + np.random.normal(0,np.abs(realConcCC[i][j]*REL_NOISE_STD)))
+            
+            print("Control Coefficients with Noise Added")
+            print(realConcCC)
     #%%
         # Define seed and ranges
         np.random.seed(r_seed)
