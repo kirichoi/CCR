@@ -269,7 +269,9 @@ def mutate_and_evaluate(listantStr, listdist):
                             
         #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
         #                            + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                            dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
+                            SS_i_ratio = np.divide(SS_i, np.min(SS_i))
+                            dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)) + 
+                                      w2*(np.linalg.norm(realSteadyStateRatio - SS_i_ratio)))
                             
                             if dist_i < listdist[m]:
                                 eval_dist[m] = dist_i
@@ -361,9 +363,12 @@ def initialize():
                         concCC_i_col = concCC_i.colnames
                         concCC_i = concCC_i[np.argsort(concCC_i_row)]
                         concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
-        #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
-        #                        + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                        dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
+#                        dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
+#                            + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
+                        SS_i_ratio = np.divide(SS_i, np.min(SS_i))
+                        dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)) + 
+                                  w2*(np.linalg.norm(realSteadyStateRatio - SS_i_ratio)))
+                        
                         ens_dist[numGoodModels] = dist_i
 #                        r.reset()
                         ens_model[numGoodModels] = r.getAntimony(current=True)
@@ -468,7 +473,9 @@ def random_gen(listAntStr, listDist):
                             
         #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
         #                        + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                            dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)))
+                            SS_i_ratio = np.divide(SS_i, np.min(SS_i))
+                            dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)) + 
+                                      w2*(np.linalg.norm(realSteadyStateRatio - SS_i_ratio)))
                             
                             if dist_i < listDist[l]:
                                 rnd_dist[l] = dist_i
@@ -496,11 +503,11 @@ if __name__ == '__main__':
     READ_SETTINGS = None
     
     # Test models
-    modelType = 'FFL' # 'FFL', 'Linear', 'Nested', 'Branched'
+    modelType = 'Linear' # 'FFL', 'Linear', 'Nested', 'Branched'
     
     # General settings
-    n_gen = 100 # Number of generations
-    ens_size = 100 # Size of output ensemble
+    n_gen = 50 # Number of generations
+    ens_size = 300 # Size of output ensemble
     pass_size = int(ens_size/10) # Number of models passed on the next generation without mutation
     mut_size = int(ens_size/2) # Number of models to mutate
     maxIter_gen = 5000 # Maximum iteration allowed for random generation
@@ -529,10 +536,10 @@ if __name__ == '__main__':
     # Data settings
     EXPORT_OUTPUT = True # Flag for saving collected models
     EXPORT_SETTINGS = False # Flag for saving current settings
-    EXPORT_PATH = './output' # Path to save the output
+    EXPORT_PATH = './output_linear_ss' # Path to save the output
     
     # Flag to run algorithm
-    RUN = False
+    RUN = True
     
     #%%
     if RUN:
@@ -557,6 +564,7 @@ if __name__ == '__main__':
         
         realRR.steadyState()
         realSteadyState = realRR.getFloatingSpeciesConcentrations()
+        realSteadyStateRatio = np.divide(realSteadyState, np.min(realSteadyState))
         realFlux = realRR.getReactionRates()
         realRR.reset()
         realFluxCC = realRR.getScaledFluxControlCoefficientMatrix()
@@ -578,6 +586,8 @@ if __name__ == '__main__':
         
         print("Original Control Coefficients")
         print(realConcCC)
+        print("Original Steady State Ratio")
+        print(realSteadyStateRatio)
         
         if NOISE:
             for i in range(len(realConcCC)):
