@@ -63,6 +63,8 @@ def mutate_and_evaluate(listantStr, listdist):
         
         r = te.loada(listantStr[m])
         param_val = r.getGlobalParameterValues()
+        tempdiff = np.max(np.abs(realConcCC - 
+                r.getScaledConcentrationControlCoefficientMatrix()), axis=0)
         
         # TODO: change initial boundary species in similar manner (maybe)
         # TODO: For top performers, only mutate rate constants
@@ -76,10 +78,13 @@ def mutate_and_evaluate(listantStr, listdist):
             rct = np.array(antimony.getReactantNames(module)).tolist()
             prd = np.array(antimony.getProductNames(module)).tolist()
             
-            tempdiff = np.max(np.abs(realConcCC - 
-                    r.getScaledConcentrationControlCoefficientMatrix()), axis=0)
-            
             r_idx = np.random.choice(np.arange(nr), p=np.divide(tempdiff,np.sum(tempdiff)))
+#            r_size = np.random.choice(np.arange(1,3), p=[0.7, 0.3])
+#            r_idxs = np.random.choice(np.arange(nr), 
+#                                      size=r_size,
+#                                      replace=False, 
+#                                      p=np.divide(tempdiff,np.sum(tempdiff)))
+#            for r_idx in r_idxs:
             rt = ng.pickReactionType()
             if rt == ng.TReactionType.UNIUNI:
                 # TODO: pick reactants and products based on control coefficients
@@ -267,11 +272,14 @@ def mutate_and_evaluate(listantStr, listdist):
                             concCC_i = concCC_i[np.argsort(concCC_i_row)]
                             concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                             
-        #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
-        #                            + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                            SS_i_ratio = np.divide(SS_i, np.min(SS_i))
-                            dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)) + 
-                                      w2*(np.linalg.norm(realSteadyStateRatio - SS_i_ratio)))
+#                            dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
+#                                    + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
+                            
+#                            SS_i_ratio = np.divide(SS_i, np.min(SS_i))
+#                            dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)) + 
+#                                      w2*(np.linalg.norm(realSteadyStateRatio - SS_i_ratio)))
+                            
+                            dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
                             
                             if dist_i < listdist[m]:
                                 eval_dist[m] = dist_i
@@ -365,9 +373,12 @@ def initialize():
                         concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
 #                        dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
 #                            + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                        SS_i_ratio = np.divide(SS_i, np.min(SS_i))
-                        dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)) + 
-                                  w2*(np.linalg.norm(realSteadyStateRatio - SS_i_ratio)))
+                        
+#                        SS_i_ratio = np.divide(SS_i, np.min(SS_i))
+#                        dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)) + 
+#                                  w2*(np.linalg.norm(realSteadyStateRatio - SS_i_ratio)))
+                        
+                        dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
                         
                         ens_dist[numGoodModels] = dist_i
 #                        r.reset()
@@ -471,11 +482,14 @@ def random_gen(listAntStr, listDist):
                             concCC_i = concCC_i[np.argsort(concCC_i_row)]
                             concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                             
-        #                    dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
-        #                        + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                            SS_i_ratio = np.divide(SS_i, np.min(SS_i))
-                            dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)) + 
-                                      w2*(np.linalg.norm(realSteadyStateRatio - SS_i_ratio)))
+#                            dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
+#                                + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
+                            
+#                            SS_i_ratio = np.divide(SS_i, np.min(SS_i))
+#                            dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)) + 
+#                                      w2*(np.linalg.norm(realSteadyStateRatio - SS_i_ratio)))
+                            
+                            dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
                             
                             if dist_i < listDist[l]:
                                 rnd_dist[l] = dist_i
@@ -503,11 +517,11 @@ if __name__ == '__main__':
     READ_SETTINGS = None
     
     # Test models
-    modelType = 'Linear' # 'FFL', 'Linear', 'Nested', 'Branched'
+    modelType = 'Branched' # 'FFL', 'Linear', 'Nested', 'Branched'
     
     # General settings
-    n_gen = 50 # Number of generations
-    ens_size = 300 # Size of output ensemble
+    n_gen = 400 # Number of generations
+    ens_size = 200 # Size of output ensemble
     pass_size = int(ens_size/10) # Number of models passed on the next generation without mutation
     mut_size = int(ens_size/2) # Number of models to mutate
     maxIter_gen = 5000 # Maximum iteration allowed for random generation
@@ -536,7 +550,7 @@ if __name__ == '__main__':
     # Data settings
     EXPORT_OUTPUT = True # Flag for saving collected models
     EXPORT_SETTINGS = False # Flag for saving current settings
-    EXPORT_PATH = './output_linear_ss' # Path to save the output
+    EXPORT_PATH = './output_branched' # Path to save the output
     
     # Flag to run algorithm
     RUN = True
@@ -703,6 +717,7 @@ if __name__ == '__main__':
         t2 = time.time()
         print(t2 - t1)
         
+        #%%
         # Collect models
         minInd, log_dens = analysis.selectWithKernalDensity(model_top, dist_top)
         model_col = model_top[:minInd[0][0]]
