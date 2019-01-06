@@ -63,6 +63,7 @@ def mutate_and_evaluate(listantStr, listdist):
         
         r = te.loada(listantStr[m])
         param_val = r.getGlobalParameterValues()
+        r.steadyState()
         tempdiff = np.max(np.abs(realConcCC - 
                 r.getScaledConcentrationControlCoefficientMatrix()), axis=0)
         
@@ -235,6 +236,7 @@ def mutate_and_evaluate(listantStr, listdist):
                     
                     r.steadyState()
                     SS_i = r.getFloatingSpeciesConcentrations()
+                    # Buggy model
                     if np.any(SS_i > 1e5):
                         r.reset()
                         ss.allow_presimulation = True
@@ -315,6 +317,7 @@ def initialize():
             if not res.success:
                 numBadModels += 1
             else:
+                # TODO: Might be able to cut the bottom part by simply using the obj func value from optimizer
                 r.reset()
                 r.setValues(r.getGlobalParameterIds(), res.x)
                     
@@ -328,12 +331,12 @@ def initialize():
                     r.steadyState()
                     SS_i = r.getFloatingSpeciesConcentrations()
                 if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
-                    continue
+                    numBadModels += 1
                 else:
                     concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
                     
                     if np.isnan(concCC_i).any():
-                        continue
+                        numBadModels += 1
                     else:
                         concCC_i_row = concCC_i.rownames
                         concCC_i_col = concCC_i.colnames
@@ -416,6 +419,7 @@ def random_gen(listAntStr, listDist):
                     
                     r.steadyState()
                     SS_i = r.getFloatingSpeciesConcentrations()
+                    # Buggy model
                     if np.any(SS_i > 1e5):
                         r.reset()
                         ss.allow_presimulation = True
@@ -457,6 +461,7 @@ def random_gen(listAntStr, listDist):
 # TODO: simulated annealing (multiply to fitness for rate constants)
 if __name__ == '__main__':
     roadrunner.Config.setValue(roadrunner.Config.ROADRUNNER_DISABLE_WARNINGS, 3)
+
 
 #%% Settings
     
@@ -527,6 +532,7 @@ if __name__ == '__main__':
         realSteadyStateRatio = np.divide(realSteadyState, np.min(realSteadyState))
         realFlux = realRR.getReactionRates()
         realRR.reset()
+        realRR.steadyState()
         realFluxCC = realRR.getScaledFluxControlCoefficientMatrix()
         realConcCC = realRR.getScaledConcentrationControlCoefficientMatrix()
         
