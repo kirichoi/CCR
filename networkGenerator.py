@@ -315,7 +315,7 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
     
     # Initialize floating species
     for index, find in enumerate(floatingIds):
-        antStr = antStr + str(find) + ' = ' + '0\n'
+        antStr = antStr + str(find) + ' = ' + str(np.random.randint (1,6)) + '\n'
         
     return antStr
      
