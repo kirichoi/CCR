@@ -24,7 +24,7 @@ def f1(k_list, *args):
     
     args[0].reset()
     
-    args[0].setValues(realGlobalParameterIds, k_list)
+    args[0].setValues(args[0].getGlobalParameterIds(), k_list)
     
     ss = args[0].steadyStateSolver
     ss.allow_approx = True
@@ -32,8 +32,8 @@ def f1(k_list, *args):
     
     try:
         r.steadyState()
-        ccTest = args[0].getScaledConcentrationControlCoefficientMatrix()
-        dist_obj = (np.linalg.norm(realConcCC - ccTest))
+        objCC = args[0].getScaledConcentrationControlCoefficientMatrix()
+        dist_obj = (np.linalg.norm(realConcCC - objCC))
     except:
         countf += 1
         dist_obj = 10000
@@ -224,6 +224,7 @@ def mutate_and_evaluate(listantStr, listdist):
                 ss.allow_presimulation = False
                 r.steadyState()
                 
+                p_bound = [(1e-3, 1.)]*r.getNumGlobalParameters()
                 res = scipy.optimize.differential_evolution(f1, args=(r,), 
                             bounds=p_bound, maxiter=optiMaxIter, tol=optiTol,
                             polish=optiPolish, seed=r_seed)
@@ -232,7 +233,7 @@ def mutate_and_evaluate(listantStr, listdist):
                     eval_model[m] = listantStr[m]
                 else:
                     r.reset()
-                    r.setValues(realGlobalParameterIds, res.x)
+                    r.setValues(r.getGlobalParameterIds(), res.x)
                     
                     r.steadyState()
                     SS_i = r.getFloatingSpeciesConcentrations()
@@ -309,6 +310,7 @@ def initialize():
             ss.allow_presimulation = False
             r.steadyState()
             
+            p_bound = [(1e-3, 1.)]*r.getNumGlobalParameters()
             res = scipy.optimize.differential_evolution(f1, args=(r,), 
                                bounds=p_bound, maxiter=optiMaxIter, tol=optiTol,
                                polish=optiPolish, seed=r_seed)
@@ -316,7 +318,7 @@ def initialize():
                 numBadModels += 1
             else:
                 r.reset()
-                r.setValues(realGlobalParameterIds, res.x)
+                r.setValues(r.getGlobalParameterIds(), res.x)
                     
                 r.steadyState()
                 SS_i = r.getFloatingSpeciesConcentrations()
@@ -402,6 +404,7 @@ def random_gen(listAntStr, listDist):
                 ss.allow_presimulation = False
                 r.steadyState()
                 
+                p_bound = [(1e-3, 1.)]*r.getNumGlobalParameters()
                 res = scipy.optimize.differential_evolution(f1, args=(r,), 
                             bounds=p_bound, maxiter=optiMaxIter, tol=optiTol,
                             polish=optiPolish, seed=r_seed)
@@ -411,7 +414,7 @@ def random_gen(listAntStr, listDist):
                     rnd_model[l] = listAntStr[l]
                 else:
                     r.reset()
-                    r.setValues(realGlobalParameterIds, res.x)
+                    r.setValues(r.getGlobalParameterIds(), res.x)
                     
                     r.steadyState()
                     SS_i = r.getFloatingSpeciesConcentrations()
@@ -567,8 +570,6 @@ if __name__ == '__main__':
         ens_range = range(ens_size)
         mut_range = range(mut_size)
         r_range = range(nr)
-        
-        p_bound = [(1e-3, 1.)]*nr
         
     #%%
         t1 = time.time()
