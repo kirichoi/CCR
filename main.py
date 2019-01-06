@@ -200,9 +200,7 @@ def mutate_and_evaluate(listantStr, listdist):
                 prd_ind = list(map(int, prd_ind))
                 reactionList.append([rtype, rct_ind, prd_ind, param_val[i]]) 
             
-            reactionList.insert(0, ns)
-            
-            st = ng.getFullStoichiometryMatrix(reactionList).tolist()
+            st = ng.getFullStoichiometryMatrix(reactionList, ns).tolist()
             stt = ng.removeBoundaryNodes(np.array(st))
             o += 1
         
@@ -210,7 +208,7 @@ def mutate_and_evaluate(listantStr, listdist):
             eval_dist[m] = listdist[m]
             eval_model[m] = listantStr[m]
         else:
-            antStr = ng.genAntimonyScript(realFloatingIds, realBoundaryIds, 
+            antStr = ng.generateAntimony(realFloatingIds, realBoundaryIds, 
                                           stt[1], stt[2], reactionList, 
                                           boundary_init=realBoundaryVal)
             try:
@@ -290,14 +288,14 @@ def initialize():
     # Initial Random generation
     while (numGoodModels < ens_size):
         rl = ng.generateReactionList(ns, nr)
-        st = ng.getFullStoichiometryMatrix(rl).tolist()
+        st = ng.getFullStoichiometryMatrix(rl, ns).tolist()
         stt = ng.removeBoundaryNodes(np.array(st))
         # Ensure no redundant model
         while (stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or st in ens_st):
             rl = ng.generateReactionList(ns, nr)
-            st = ng.getFullStoichiometryMatrix(rl).tolist()
+            st = ng.getFullStoichiometryMatrix(rl, ns).tolist()
             stt = ng.removeBoundaryNodes(np.array(st))
-        antStr = ng.genAntimonyScript(realFloatingIds, realBoundaryIds, stt[1],
+        antStr = ng.generateAntimony(realFloatingIds, realBoundaryIds, stt[1],
                                       stt[2], rl, boundary_init=realBoundaryVal)
         try:
             r = te.loada(antStr)
@@ -378,20 +376,20 @@ def random_gen(listAntStr, listDist):
     for l in range(rndSize):
         d = 0
         rl = ng.generateReactionList(ns, nr)
-        st = ng.getFullStoichiometryMatrix(rl).tolist()
+        st = ng.getFullStoichiometryMatrix(rl, ns).tolist()
         stt = ng.removeBoundaryNodes(np.array(st))
         # Ensure no redundant models
         while ((stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or
                 st in ens_st) and (d < maxIter_gen)):
             rl = ng.generateReactionList(ns, nr)
-            st = ng.getFullStoichiometryMatrix(rl).tolist()
+            st = ng.getFullStoichiometryMatrix(rl, ns).tolist()
             stt = ng.removeBoundaryNodes(np.array(st))
             d += 1
         if d >= maxIter_gen:
             rnd_dist[l] = listDist[l]
             rnd_model[l] = listAntStr[l]
         else:
-            antStr = ng.genAntimonyScript(realFloatingIds, realBoundaryIds, 
+            antStr = ng.generateAntimony(realFloatingIds, realBoundaryIds, 
                             stt[1], stt[2], rl, boundary_init=realBoundaryVal)
             try:
                 r = te.loada(antStr)
@@ -498,7 +496,7 @@ if __name__ == '__main__':
     # Data settings
     EXPORT_OUTPUT = True # Flag for saving collected models
     EXPORT_SETTINGS = False # Flag for saving current settings
-    EXPORT_PATH = './output_branched' # Path to save the output
+    EXPORT_PATH = './output_ffl' # Path to save the output
     
     # Flag to run algorithm
     RUN = True
