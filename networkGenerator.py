@@ -146,18 +146,15 @@ def generateReactionList(nSpecies, nReactions):
             
             reactionList.append ([rt, [rct_id[0], rct_id[1]], [prd_id[0], prd_id[1]], rateConstant])
 
-    reactionList.insert (0, nSpecies)
     return reactionList
     
 
 # Include boundary and floating species
 # Returns a list:
 # [New Stoichiometry matrix, list of floatingIds, list of boundaryIds]
-def getFullStoichiometryMatrix(reactionList):
-    nSpecies = reactionList[0]
+def getFullStoichiometryMatrix(reactionList, ns):
     reactionListCopy = copy.deepcopy(reactionList)
-    reactionListCopy.pop(0)
-    st = np.zeros((nSpecies, len(reactionListCopy)))
+    st = np.zeros((ns, len(reactionListCopy)))
     
     for index, rind in enumerate(reactionListCopy):
         if rind[0] == TReactionType.UNIUNI:
@@ -238,13 +235,13 @@ def removeBoundaryNodes(st):
     return [np.delete(st, indexes + orphanSpecies, axis=0), floatingIds, boundaryIds]
 
 
-def genAntimonyScript(floatingIds, boundaryIds, stt1, stt2, reactionList, boundary_init=None):
-    
-    nSpecies = reactionList[0]
-    # Remove the first element which is the nSpecies
+def generateRateLaw(rt, rl):
+    pass
+
+
+def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundary_init=None):
     reactionListCopy = copy.deepcopy(reactionList)
-    reactionListCopy.pop (0)
-    #%%
+    
     real = np.append(floatingIds, boundaryIds)
     if type(real[0]) == 'str' or type(real[0]) == np.str_:
         real = [s.strip('S') for s in real]
@@ -252,7 +249,7 @@ def genAntimonyScript(floatingIds, boundaryIds, stt1, stt2, reactionList, bounda
     tar = stt1 + stt2
     tar = list(map(int, tar))
     
-    #%%
+    # List species
     antStr = ''
     if len (floatingIds) > 0:
         antStr = antStr + 'var ' + str(floatingIds[0])
@@ -266,7 +263,7 @@ def genAntimonyScript(floatingIds, boundaryIds, stt1, stt2, reactionList, bounda
             antStr = antStr + ', ' + str(index)
         antStr = antStr + ';\n'
 
-    
+    # List reactions
     for index, rind in enumerate(reactionListCopy):
         if rind[0] == TReactionType.UNIUNI:
             # UniUni
@@ -302,10 +299,12 @@ def genAntimonyScript(floatingIds, boundaryIds, stt1, stt2, reactionList, bounda
             antStr = antStr + '; k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])]) + '*S' + str(real[tar.index(reactionListCopy[index][1][1])])
         antStr = antStr + ';\n'
 
+    # List rate constants
     antStr = antStr + '\n'
     for index, rind in enumerate(reactionListCopy):
         antStr = antStr + 'k' + str(index) + ' = ' + str(rind[3]) + '\n'
         
+    # Initialize boundary species
     antStr = antStr + '\n'
     if type(boundary_init) == type(None):
         for index, bind in enumerate(boundaryIds):
@@ -314,8 +313,9 @@ def genAntimonyScript(floatingIds, boundaryIds, stt1, stt2, reactionList, bounda
         for index, bind in enumerate(boundaryIds):
             antStr = antStr + str(bind) + ' = ' + str(boundary_init[index]) + '\n'
     
+    # Initialize floating species
     for index, find in enumerate(floatingIds):
-        antStr = antStr + str(find) + ' = 0\n'
+        antStr = antStr + str(find) + ' = ' + str(np.random.randint (1,6)) + '\n'
         
     return antStr
      
