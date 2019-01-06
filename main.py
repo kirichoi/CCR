@@ -66,8 +66,6 @@ def mutate_and_evaluate(listantStr, listdist):
         tempdiff = np.max(np.abs(realConcCC - 
                 r.getScaledConcentrationControlCoefficientMatrix()), axis=0)
         
-        # TODO: change initial boundary species in similar manner (maybe)
-        # TODO: For top performers, only mutate rate constants
         stt = [[],[],[]]
         st = ens_st[0]
         
@@ -79,12 +77,6 @@ def mutate_and_evaluate(listantStr, listdist):
             prd = np.array(antimony.getProductNames(module)).tolist()
             
             r_idx = np.random.choice(np.arange(nr), p=np.divide(tempdiff,np.sum(tempdiff)))
-#            r_size = np.random.choice(np.arange(1,3), p=[0.7, 0.3])
-#            r_idxs = np.random.choice(np.arange(nr), 
-#                                      size=r_size,
-#                                      replace=False, 
-#                                      p=np.divide(tempdiff,np.sum(tempdiff)))
-#            for r_idx in r_idxs:
             rt = ng.pickReactionType()
             if rt == ng.TReactionType.UNIUNI:
                 # TODO: pick reactants and products based on control coefficients
@@ -254,14 +246,6 @@ def mutate_and_evaluate(listantStr, listdist):
                         eval_dist[m] = listdist[m]
                         eval_model[m] = listantStr[m]
                     else:
-    #                    F_i = r.getReactionRates()
-                        
-    #                    fluxCC_i = r.getScaledFluxControlCoefficientMatrix()
-    #                    fluxCC_i_row = fluxCC_i.rownames
-    #                    fluxCC_i_col = fluxCC_i.colnames
-    #                    fluxCC_i = fluxCC_i[np.argsort(fluxCC_i_row)]
-    #                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
-                        
                         concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
                         if np.isnan(concCC_i).any():
                             eval_dist[m] = listdist[m]
@@ -271,13 +255,6 @@ def mutate_and_evaluate(listantStr, listdist):
                             concCC_i_col = concCC_i.colnames
                             concCC_i = concCC_i[np.argsort(concCC_i_row)]
                             concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
-                            
-#                            dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
-#                                    + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                            
-#                            SS_i_ratio = np.divide(SS_i, np.min(SS_i))
-#                            dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)) + 
-#                                      w2*(np.linalg.norm(realSteadyStateRatio - SS_i_ratio)))
                             
                             dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
                             
@@ -311,7 +288,6 @@ def initialize():
     
     # Initial Random generation
     while (numGoodModels < ens_size):
-        #antStr = ng.generateLinearChainAnt(ns)
         rl = ng.generateReactionList(ns, nr)
         st = ng.getFullStoichiometryMatrix(rl).tolist()
         stt = ng.removeBoundaryNodes(np.array(st))
@@ -354,14 +330,6 @@ def initialize():
                 if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
                     continue
                 else:
-                    #F_i = r.getReactionRates()
-                    
-    #                    fluxCC_i = r.getScaledFluxControlCoefficientMatrix()
-    #                    fluxCC_i_row = fluxCC_i.rownames
-    #                    fluxCC_i_col = fluxCC_i.colnames
-    #                    fluxCC_i = fluxCC_i[np.argsort(fluxCC_i_row)]
-    #                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
-                    
                     concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
                     
                     if np.isnan(concCC_i).any():
@@ -371,19 +339,13 @@ def initialize():
                         concCC_i_col = concCC_i.colnames
                         concCC_i = concCC_i[np.argsort(concCC_i_row)]
                         concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
-#                        dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
-#                            + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                        
-#                        SS_i_ratio = np.divide(SS_i, np.min(SS_i))
-#                        dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)) + 
-#                                  w2*(np.linalg.norm(realSteadyStateRatio - SS_i_ratio)))
                         
                         dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
                         
                         ens_dist[numGoodModels] = dist_i
 #                        r.reset()
                         ens_model[numGoodModels] = r.getAntimony(current=True)
-                        ens_st.append(st)#[numGoodModels] = st
+                        ens_st.append(st)
                         
                         numGoodModels = numGoodModels + 1
         except:
@@ -463,14 +425,6 @@ def random_gen(listAntStr, listDist):
                         rnd_dist[l] = listDist[l]
                         rnd_model[l] = listAntStr[l]
                     else:
-    #                    F_i = r.getReactionRates()
-                        
-    #                    fluxCC_i = r.getScaledFluxControlCoefficientMatrix()
-    #                    fluxCC_i_row = fluxCC_i.rownames
-    #                    fluxCC_i_col = fluxCC_i.colnames
-    #                    fluxCC_i = fluxCC_i[np.argsort(fluxCC_i_row)]
-    #                    fluxCC_i = fluxCC_i[:,np.argsort(fluxCC_i_col)]
-                        
                         concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
                         
                         if np.isnan(concCC_i).any():
@@ -481,13 +435,6 @@ def random_gen(listAntStr, listDist):
                             concCC_i_col = concCC_i.colnames
                             concCC_i = concCC_i[np.argsort(concCC_i_row)]
                             concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
-                            
-#                            dist_i = (w1*(np.linalg.norm(realFluxCC - fluxCC_i) + np.linalg.norm(realConcCC - concCC_i))
-#                                + w2*(np.sqrt(np.sum(np.square(realFlux - F_i))) + np.sqrt(np.sum(np.square(realSteadyState - SS_i)))))
-                            
-#                            SS_i_ratio = np.divide(SS_i, np.min(SS_i))
-#                            dist_i = (w1*(np.linalg.norm(realConcCC - concCC_i)) + 
-#                                      w2*(np.linalg.norm(realSteadyStateRatio - SS_i_ratio)))
                             
                             dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
                             
@@ -517,11 +464,11 @@ if __name__ == '__main__':
     READ_SETTINGS = None
     
     # Test models
-    modelType = 'Branched' # 'FFL', 'Linear', 'Nested', 'Branched'
+    modelType = 'FFL' # 'FFL', 'Linear', 'Nested', 'Branched'
     
     # General settings
-    n_gen = 400 # Number of generations
-    ens_size = 200 # Size of output ensemble
+    n_gen = 100 # Number of generations
+    ens_size = 100 # Size of output ensemble
     pass_size = int(ens_size/10) # Number of models passed on the next generation without mutation
     mut_size = int(ens_size/2) # Number of models to mutate
     maxIter_gen = 5000 # Maximum iteration allowed for random generation
@@ -531,8 +478,6 @@ if __name__ == '__main__':
     optiMaxIter = 1000 # Maximum iteraction allowed for optimizer
     optiTol = 0.01
     optiPolish = True
-#    MKP = 0. # Probability of changing rate constants on mutation. Probability of changing reaction is 1 - MKP
-#    rateStep = 0.1 # Stepsize for mutating rate constants. Actual stepsize is rateConstant*rateStep
     w1 = 1.0 # Weight for control coefficients when calculating the distance
     w2 = 1.0 # Weight for steady-state and flux when calculating the distance
     
