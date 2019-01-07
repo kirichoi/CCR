@@ -18,6 +18,8 @@ import analysis
 import matplotlib.pyplot as plt
 import time
 
+#np.seterr(all='raise')
+
 def f1(k_list, *args):
     global counts
     global countf
@@ -26,9 +28,9 @@ def f1(k_list, *args):
     
     args[0].setValues(args[0].getGlobalParameterIds(), k_list)
     
-    ss = args[0].steadyStateSolver
-    ss.allow_approx = True
-    ss.allow_presimulation = False
+#    ss = args[0].steadyStateSolver
+#    ss.allow_approx = True
+#    ss.allow_presimulation = False
     
     try:
         r.steadyState()
@@ -64,6 +66,7 @@ def mutate_and_evaluate(listantStr, listdist):
         r = te.loada(listantStr[m])
         param_val = r.getGlobalParameterValues()
         r.steadyState()
+        
         tempdiff = np.max(np.abs(realConcCC - 
                 r.getScaledConcentrationControlCoefficientMatrix()), axis=0)
         
@@ -231,7 +234,7 @@ def mutate_and_evaluate(listantStr, listdist):
                     eval_dist[m] = listdist[m]
                     eval_model[m] = listantStr[m]
                 else:
-                    r.reset()
+                    r = te.loada(antStr)
                     r.setValues(r.getGlobalParameterIds(), res.x)
                     
                     r.steadyState()
@@ -243,11 +246,12 @@ def mutate_and_evaluate(listantStr, listdist):
                         ss.presimulation_time = 100
                         r.steadyState()
                         SS_i = r.getFloatingSpeciesConcentrations()
-                    if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
+                    if np.any(SS_i < 1e-5) or np.any(SS_i > 1e5):
                         eval_dist[m] = listdist[m]
                         eval_model[m] = listantStr[m]
                     else:
                         concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
+                        
                         if np.isnan(concCC_i).any():
                             eval_dist[m] = listdist[m]
                             eval_model[m] = listantStr[m]
@@ -261,7 +265,7 @@ def mutate_and_evaluate(listantStr, listdist):
                             
                             if dist_i < listdist[m]:
                                 eval_dist[m] = dist_i
-#                                r.reset()
+                                r.reset()
                                 eval_model[m] = r.getAntimony(current=True)
                                 ens_st.append(st)
                             else:
@@ -318,7 +322,7 @@ def initialize():
                 numBadModels += 1
             else:
                 # TODO: Might be able to cut the bottom part by simply using the obj func value from optimizer
-                r.reset()
+                r = te.loada(antStr)
                 r.setValues(r.getGlobalParameterIds(), res.x)
                     
                 r.steadyState()
@@ -330,7 +334,8 @@ def initialize():
                     ss.presimulation_time = 100
                     r.steadyState()
                     SS_i = r.getFloatingSpeciesConcentrations()
-                if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
+                        
+                if np.any(SS_i < 1e-5) or np.any(SS_i > 1e5):
                     numBadModels += 1
                 else:
                     concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
@@ -346,7 +351,7 @@ def initialize():
                         dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
                         
                         ens_dist[numGoodModels] = dist_i
-#                        r.reset()
+                        r.reset()
                         ens_model[numGoodModels] = r.getAntimony(current=True)
                         ens_st.append(st)
                         
@@ -414,7 +419,7 @@ def random_gen(listAntStr, listDist):
                     rnd_dist[l] = listDist[l]
                     rnd_model[l] = listAntStr[l]
                 else:
-                    r.reset()
+                    r = te.loada(antStr)
                     r.setValues(r.getGlobalParameterIds(), res.x)
                     
                     r.steadyState()
@@ -426,7 +431,7 @@ def random_gen(listAntStr, listDist):
                         ss.presimulation_time = 100
                         r.steadyState()
                         SS_i = r.getFloatingSpeciesConcentrations()
-                    if np.any(SS_i < 1E-5) or np.any(SS_i > 1e5):
+                    if np.any(SS_i < 1e-5) or np.any(SS_i > 1e5):
                         rnd_dist[l] = listDist[l]
                         rnd_model[l] = listAntStr[l]
                     else:
@@ -445,7 +450,7 @@ def random_gen(listAntStr, listDist):
                             
                             if dist_i < listDist[l]:
                                 rnd_dist[l] = dist_i
-#                                r.reset()
+                                r.reset()
                                 rnd_model[l] = r.getAntimony(current=True)
                                 ens_st.append(st)
                             else:
@@ -473,7 +478,7 @@ if __name__ == '__main__':
     modelType = 'FFL' # 'FFL', 'Linear', 'Nested', 'Branched'
     
     # General settings
-    n_gen = 100 # Number of generations
+    n_gen = 400 # Number of generations
     ens_size = 100 # Size of output ensemble
     pass_size = int(ens_size/10) # Number of models passed on the next generation without mutation
     mut_size = int(ens_size/2) # Number of models to mutate
