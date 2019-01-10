@@ -28,10 +28,6 @@ def f1(k_list, *args):
     
     args[0].setValues(args[0].getGlobalParameterIds(), k_list)
     
-#    ss = args[0].steadyStateSolver
-#    ss.allow_approx = True
-#    ss.allow_presimulation = False
-    
     try:
         r.steadyState()
         objCC = args[0].getScaledConcentrationControlCoefficientMatrix()
@@ -89,16 +85,20 @@ def mutate_and_evaluate(listantStr, listdist):
                         realConcCC[:,r_idx])[0]], np.array(realBoundaryIdsInd))
                 rct_id = np.random.choice(posRctInd, size=1)
                 prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
-                
-                # Search for potentially identical reactions
-                all_rct = [i for i, x in enumerate(rct) if x == ['S'+str(rct_id[0])]]
-                all_prd = [i for i, x in enumerate(prd) if x == ['S'+str(prd_id[0])]]
-                
-                while (len(set(all_rct) & set(all_prd)) > 0):
-                    rct_id = np.random.choice(np.arange(ns), size=1)
+    
+                while (np.any(np.isin(rct_id, realBoundaryIdsInd))) and (np.any(np.isin(prd_id, realBoundaryIdsInd))):
+                    rct_id = np.random.choice(posRctInd, size=1)
                     prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
+                    
+                    # Search for potentially identical reactions
                     all_rct = [i for i, x in enumerate(rct) if x == ['S'+str(rct_id[0])]]
                     all_prd = [i for i, x in enumerate(prd) if x == ['S'+str(prd_id[0])]]
+                    
+                    while (len(set(all_rct) & set(all_prd)) > 0):
+                        rct_id = np.random.choice(np.arange(ns), size=1)
+                        prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
+                        all_rct = [i for i, x in enumerate(rct) if x == ['S'+str(rct_id[0])]]
+                        all_prd = [i for i, x in enumerate(prd) if x == ['S'+str(prd_id[0])]]
                 
                 rct[r_idx] = ["S" + str(rct_id[0])]
                 prd[r_idx] = ["S" + str(prd_id[0])]
@@ -112,19 +112,25 @@ def mutate_and_evaluate(listantStr, listdist):
                 # pick a product but only products that don't include the reactants
                 prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
                 
-                 # Search for potentially identical reactions
-                all_rct = [i for i, x in enumerate(rct) if x == ('S'+str(rct_id[0]),
-                                    'S'+str(rct_id[1])) or x == ('S'+str(rct_id[1]), 
-                                    'S'+str(rct_id[0]))]
-                all_prd = [i for i, x in enumerate(prd) if x == ['S'+str(prd_id[0])]]
-                
-                while (len(set(all_rct) & set(all_prd)) > 0):
-                    rct_id = np.random.choice(np.arange(ns), size=2, replace=True)
+                while (np.any(np.isin(rct_id, realBoundaryIdsInd))) and (np.any(np.isin(prd_id, realBoundaryIdsInd))):
+                    # Pick two reactants
+                    rct_id = np.random.choice(posRctInd, size=2, replace=True)
+                    # pick a product but only products that don't include the reactants
                     prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
+                    
+                     # Search for potentially identical reactions
                     all_rct = [i for i, x in enumerate(rct) if x == ('S'+str(rct_id[0]),
                                         'S'+str(rct_id[1])) or x == ('S'+str(rct_id[1]), 
                                         'S'+str(rct_id[0]))]
                     all_prd = [i for i, x in enumerate(prd) if x == ['S'+str(prd_id[0])]]
+                    
+                    while (len(set(all_rct) & set(all_prd)) > 0):
+                        rct_id = np.random.choice(np.arange(ns), size=2, replace=True)
+                        prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
+                        all_rct = [i for i, x in enumerate(rct) if x == ('S'+str(rct_id[0]),
+                                            'S'+str(rct_id[1])) or x == ('S'+str(rct_id[1]), 
+                                            'S'+str(rct_id[0]))]
+                        all_prd = [i for i, x in enumerate(prd) if x == ['S'+str(prd_id[0])]]
                 
                 rct[r_idx] = ["S" + str(rct_id[0]), "S" + str(rct_id[1])]
                 prd[r_idx] = ["S" + str(prd_id[0])]
@@ -138,20 +144,26 @@ def mutate_and_evaluate(listantStr, listdist):
                 prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2,
                                           replace=True)
                 
-                # Search for potentially identical reactions
-                all_rct = [i for i, x in enumerate(rct) if x == ['S'+str(rct_id[0])]]
-                all_prd = [i for i, x in enumerate(prd) if x == ('S'+str(prd_id[0]),
-                                    'S'+str(prd_id[1])) or x == ('S'+str(prd_id[1]), 
-                                    'S'+str(prd_id[0]))]
-                
-                while (len(set(all_rct) & set(all_prd)) > 0):
-                    rct_id = np.random.choice(np.arange(ns), size=1)
-                    prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), 
-                                              size=2, replace=True)
+                while (np.any(np.isin(rct_id, realBoundaryIdsInd))) and (np.any(np.isin(prd_id, realBoundaryIdsInd))):
+                    rct_id = np.random.choice(posRctInd, size=1)
+                    # pick a product but only products that don't include the reactant
+                    prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2,
+                                              replace=True)
+                    
+                    # Search for potentially identical reactions
                     all_rct = [i for i, x in enumerate(rct) if x == ['S'+str(rct_id[0])]]
                     all_prd = [i for i, x in enumerate(prd) if x == ('S'+str(prd_id[0]),
                                         'S'+str(prd_id[1])) or x == ('S'+str(prd_id[1]), 
                                         'S'+str(prd_id[0]))]
+                    
+                    while (len(set(all_rct) & set(all_prd)) > 0):
+                        rct_id = np.random.choice(np.arange(ns), size=1)
+                        prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), 
+                                                  size=2, replace=True)
+                        all_rct = [i for i, x in enumerate(rct) if x == ['S'+str(rct_id[0])]]
+                        all_prd = [i for i, x in enumerate(prd) if x == ('S'+str(prd_id[0]),
+                                            'S'+str(prd_id[1])) or x == ('S'+str(prd_id[1]), 
+                                            'S'+str(prd_id[0]))]
                 
                 rct[r_idx] = ["S" + str(rct_id[0])]
                 prd[r_idx] = ["S" + str(prd_id[0]), "S" + str(prd_id[1])]
@@ -165,24 +177,30 @@ def mutate_and_evaluate(listantStr, listdist):
                 prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2, 
                                           replace=True)
                 
-                # Search for potentially identical reactions
-                all_rct = [i for i, x in enumerate(rct) if x == ('S'+str(rct_id[0]),
-                                    'S'+str(rct_id[1])) or x == ('S'+str(rct_id[1]),
-                                    'S'+str(rct_id[0]))]
-                all_prd = [i for i, x in enumerate(prd) if x == ('S'+str(prd_id[0]),
-                                    'S'+str(prd_id[1])) or x == ('S'+str(prd_id[1]), 
-                                    'S'+str(prd_id[0]))]
-                
-                while (len(set(all_rct) & set(all_prd)) > 0):
-                    rct_id = np.random.choice(np.arange(ns), size=2, replace=True)
-                    prd_id = np.random.choice(np.delete(np.arange(ns), rct_id),
-                                              size=2, replace=True)
+                while (np.any(np.isin(rct_id, realBoundaryIdsInd))) and (np.any(np.isin(prd_id, realBoundaryIdsInd))):
+                    rct_id = np.random.choice(posRctInd, size=2, replace=True)
+                    # pick a product but only products that don't include the reactant
+                    prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2, 
+                                              replace=True)
+                    
+                    # Search for potentially identical reactions
                     all_rct = [i for i, x in enumerate(rct) if x == ('S'+str(rct_id[0]),
                                         'S'+str(rct_id[1])) or x == ('S'+str(rct_id[1]),
                                         'S'+str(rct_id[0]))]
                     all_prd = [i for i, x in enumerate(prd) if x == ('S'+str(prd_id[0]),
-                                        'S'+str(prd_id[1])) or x == ('S'+str(prd_id[1]),
+                                        'S'+str(prd_id[1])) or x == ('S'+str(prd_id[1]), 
                                         'S'+str(prd_id[0]))]
+                    
+                    while (len(set(all_rct) & set(all_prd)) > 0):
+                        rct_id = np.random.choice(np.arange(ns), size=2, replace=True)
+                        prd_id = np.random.choice(np.delete(np.arange(ns), rct_id),
+                                                  size=2, replace=True)
+                        all_rct = [i for i, x in enumerate(rct) if x == ('S'+str(rct_id[0]),
+                                            'S'+str(rct_id[1])) or x == ('S'+str(rct_id[1]),
+                                            'S'+str(rct_id[0]))]
+                        all_prd = [i for i, x in enumerate(prd) if x == ('S'+str(prd_id[0]),
+                                            'S'+str(prd_id[1])) or x == ('S'+str(prd_id[1]),
+                                            'S'+str(prd_id[0]))]
                 
                 rct[r_idx] = ["S" + str(rct_id[0]), "S" + str(rct_id[1])]
                 prd[r_idx] = ["S" + str(prd_id[0]), "S" + str(prd_id[1])]
@@ -293,12 +311,12 @@ def initialize():
     
     # Initial Random generation
     while (numGoodModels < ens_size):
-        rl = ng.generateReactionList(ns, nr)
+        rl = ng.generateReactionList(ns, nr, realBoundaryIdsInd)
         st = ng.getFullStoichiometryMatrix(rl, ns).tolist()
         stt = ng.removeBoundaryNodes(np.array(st))
         # Ensure no redundant model
         while (stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or st in ens_st):
-            rl = ng.generateReactionList(ns, nr)
+            rl = ng.generateReactionList(ns, nr, realBoundaryIdsInd)
             st = ng.getFullStoichiometryMatrix(rl, ns).tolist()
             stt = ng.removeBoundaryNodes(np.array(st))
         antStr = ng.generateAntimony(realFloatingIds, realBoundaryIds, stt[1],
@@ -383,13 +401,13 @@ def random_gen(listAntStr, listDist):
     
     for l in range(rndSize):
         d = 0
-        rl = ng.generateReactionList(ns, nr)
+        rl = ng.generateReactionList(ns, nr, realBoundaryIdsInd)
         st = ng.getFullStoichiometryMatrix(rl, ns).tolist()
         stt = ng.removeBoundaryNodes(np.array(st))
         # Ensure no redundant models
         while ((stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or
                 st in ens_st) and (d < maxIter_gen)):
-            rl = ng.generateReactionList(ns, nr)
+            rl = ng.generateReactionList(ns, nr, realBoundaryIdsInd)
             st = ng.getFullStoichiometryMatrix(rl, ns).tolist()
             stt = ng.removeBoundaryNodes(np.array(st))
             d += 1
@@ -478,7 +496,7 @@ if __name__ == '__main__':
     modelType = 'FFL' # 'FFL', 'Linear', 'Nested', 'Branched'
     
     # General settings
-    n_gen = 400 # Number of generations
+    n_gen = 300 # Number of generations
     ens_size = 100 # Size of output ensemble
     pass_size = int(ens_size/10) # Number of models passed on the next generation without mutation
     mut_size = int(ens_size/2) # Number of models to mutate
@@ -574,6 +592,8 @@ if __name__ == '__main__':
         
         best_dist = []
         avg_dist = []
+        med_dist = []
+        top5_dist = []
         
         n_range = range(1, n_gen)
         ens_range = range(ens_size)
@@ -594,6 +614,8 @@ if __name__ == '__main__':
         print("Average distance: " + str(np.average(dist_top)))
         best_dist.append(dist_top[0])
         avg_dist.append(np.average(dist_top))
+        med_dist.append(np.median(dist_top))
+        top5_dist.append(np.average(dist_top[:int(0.05*ens_size)]))
         
         breakFlag = False
         
@@ -647,6 +669,8 @@ if __name__ == '__main__':
             print("Average distance: " + str(np.average(dist_top)))
             best_dist.append(dist_top[0])
             avg_dist.append(np.average(dist_top))
+            med_dist.append(np.median(dist_top))
+            top5_dist.append(np.average(dist_top[:int(0.05*ens_size)]))
             
     #        for tt in range(len(mut_ind_inv)):
     #            r = te.loada(ens_model[mut_ind_inv[tt]])
@@ -688,22 +712,25 @@ if __name__ == '__main__':
                     os.mkdir(EXPORT_PATH)
                 if not os.path.exists(os.path.join(EXPORT_PATH, 'images')):
                     os.mkdir(os.path.join(EXPORT_PATH, 'images'))
-                pt.plotProgress(best_dist, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/convergence_best.pdf'))
-                pt.plotProgress(avg_dist, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/convergence_avg.pdf'))
+                pt.plotAllProgress([best_dist, avg_dist, med_dist, top5_dist], 
+                                   labels=['Best', 'Avg', 'Median', 'Top 5 percent'],
+                                   SAVE_PATH=os.path.join(EXPORT_PATH, 'images/AllConvergences.pdf'))
             else:
-                pt.plotProgress(best_dist)
-                pt.plotProgress(avg_dist)
+                pt.plotAllProgress([best_dist, avg_dist, med_dist, top5_dist], 
+                                   labels=['Best', 'Avg', 'Median', 'Top 5 percent'])
             # TODO: Add polishing with fast optimizer 
             
             # Average residual
             if SAVE_PLOT:
-                pt.plotResidual(realModel, ens_model, ens_dist, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/average_residual.pdf'))
+                pt.plotResidual(realModel, ens_model, ens_dist, 
+                                SAVE_PATH=os.path.join(EXPORT_PATH, 'images/average_residual.pdf'))
             else:
                 pt.plotResidual(realModel, ens_model, ens_dist)
                 
             # Distance histogram with KDE
             if SAVE_PLOT:
-                pt.plotDistanceHistogramWithKDE(dist_top, log_dens, minInd, SAVE_PATH=os.path.join(EXPORT_PATH, 'images/distance_hist_w_KDE.pdf'))
+                pt.plotDistanceHistogramWithKDE(dist_top, log_dens, minInd, 
+                                                SAVE_PATH=os.path.join(EXPORT_PATH, 'images/distance_hist_w_KDE.pdf'))
             else:
                 pt.plotDistanceHistogramWithKDE(dist_top, log_dens, minInd)
                 

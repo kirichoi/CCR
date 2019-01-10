@@ -60,92 +60,109 @@ def pickReactionType():
 # Generates a reaction network in the form of a reaction list
 # reactionList = [nSpecies, reaction, ....]
 # reaction = [reactionType, [list of reactants], [list of product], rateConstant]
-def generateReactionList(nSpecies, nReactions):
+def generateReactionList(nSpecies, nReactions, boundaryIdx):
     reactionList = []
     for r in range(nReactions):
         rct = [col[1] for col in reactionList]
         prd = [col[2] for col in reactionList]
-        rateConstant = 0.5#np.random.uniform(1e-3, 1.)
+        rateConstant = 0.5  #np.random.uniform(1e-3, 1.)
         rt = pickReactionType()
+        
         if rt == TReactionType.UNIUNI:
             # UniUni
             rct_id = np.random.choice(np.arange(nSpecies), size=1)
             prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
             
-            # Search for potentially identical reactions
-            all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
-            all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
-            
-            while len(set(all_rct) & set(all_prd)) > 0:
+            while (np.any(np.isin(rct_id, boundaryIdx))) and (np.any(np.isin(prd_id, boundaryIdx))):
                 rct_id = np.random.choice(np.arange(nSpecies), size=1)
                 prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
+                
+                # Search for potentially identical reactions
                 all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
                 all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
+                
+                while len(set(all_rct) & set(all_prd)) > 0:
+                    rct_id = np.random.choice(np.arange(nSpecies), size=1)
+                    prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
+                    all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
+                    all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
             
             reactionList.append ([rt, [rct_id[0]], [prd_id[0]], rateConstant]) 
 
         elif rt == TReactionType.BIUNI:
             # BiUni
             rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
-            # pick a product but only products that don't include the reactants
             prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
             
-             # Search for potentially identical reactions
-            all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                               rct_id[1]] or x == [rct_id[1], rct_id[0]]]
-            all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
-            
-            while len(set(all_rct) & set(all_prd)) > 0:
+            while (np.any(np.isin(rct_id, boundaryIdx))) and (np.any(np.isin(prd_id, boundaryIdx))):
                 rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
+                # pick a product but only products that don't include the reactants
                 prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
+                
+                 # Search for potentially identical reactions
                 all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                               rct_id[1]] or x == [rct_id[1], rct_id[0]]]
+                                                   rct_id[1]] or x == [rct_id[1], rct_id[0]]]
                 all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
+                
+                while len(set(all_rct) & set(all_prd)) > 0:
+                    rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
+                    prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
+                    all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
+                                                   rct_id[1]] or x == [rct_id[1], rct_id[0]]]
+                    all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
             
             reactionList.append ([rt, [rct_id[0], rct_id[1]], [prd_id[0]], rateConstant]) 
         
         elif rt == TReactionType.UNIBI:
             # UniBi
             rct_id = np.random.choice(np.arange(nSpecies), size=1)
-            # pick a product but only products that don't include the reactant
             prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
             
-            # Search for potentially identical reactions
-            all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
-            all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                               prd_id[1]] or x == [prd_id[1], prd_id[0]]]
-            
-            while len(set(all_rct) & set(all_prd)) > 0:
+            while (np.any(np.isin(rct_id, boundaryIdx))) and (np.any(np.isin(prd_id, boundaryIdx))):
                 rct_id = np.random.choice(np.arange(nSpecies), size=1)
+                # pick a product but only products that don't include the reactant
                 prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
+                
+                # Search for potentially identical reactions
                 all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
                 all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                               prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+                                                   prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+                
+                while len(set(all_rct) & set(all_prd)) > 0:
+                    rct_id = np.random.choice(np.arange(nSpecies), size=1)
+                    prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
+                    all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
+                    all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
+                                                   prd_id[1]] or x == [prd_id[1], prd_id[0]]]
             
             reactionList.append ([rt, [rct_id[0]], [prd_id[0], prd_id[1]], rateConstant]) 
         
         else:
             # BiBi
             rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
-            # pick a product but only products that don't include the reactant
             prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
             
-            # Search for potentially identical reactions
-            all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                               rct_id[1]] or x == [rct_id[1], rct_id[0]]]
-            all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                               prd_id[1]] or x == [prd_id[1], prd_id[0]]]
-            
-            while len(set(all_rct) & set(all_prd)) > 0:
+            while (np.any(np.isin(rct_id, boundaryIdx))) and (np.any(np.isin(prd_id, boundaryIdx))):
                 rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
+                # pick a product but only products that don't include the reactant
                 prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
+                
+                # Search for potentially identical reactions
                 all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                               rct_id[1]] or x == [rct_id[1], rct_id[0]]]
+                                                   rct_id[1]] or x == [rct_id[1], rct_id[0]]]
                 all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                               prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+                                                   prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+                
+                while len(set(all_rct) & set(all_prd)) > 0:
+                    rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
+                    prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
+                    all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
+                                                   rct_id[1]] or x == [rct_id[1], rct_id[0]]]
+                    all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
+                                                   prd_id[1]] or x == [prd_id[1], prd_id[0]]]
             
             reactionList.append ([rt, [rct_id[0], rct_id[1]], [prd_id[0], prd_id[1]], rateConstant])
-
+        
     return reactionList
     
 
