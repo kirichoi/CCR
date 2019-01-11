@@ -527,7 +527,7 @@ if __name__ == '__main__':
     EXPORT_PATH = './output_ffl' # Path to save the output
     
     # Flag to run algorithm
-    RUN = True
+    RUN = False
     
     #%%
     if RUN:
@@ -615,7 +615,7 @@ if __name__ == '__main__':
         best_dist.append(dist_top[0])
         avg_dist.append(np.average(dist_top))
         med_dist.append(np.median(dist_top))
-        top5_dist.append(np.average(dist_top[:int(0.05*ens_size)]))
+        top5_dist.append(np.average(np.unique(dist_top)[:int(0.05*ens_size)]))
         
         breakFlag = False
         
@@ -670,7 +670,7 @@ if __name__ == '__main__':
             best_dist.append(dist_top[0])
             avg_dist.append(np.average(dist_top))
             med_dist.append(np.median(dist_top))
-            top5_dist.append(np.average(dist_top[:int(0.05*ens_size)]))
+            top5_dist.append(np.average(np.unique(dist_top)[:int(0.05*ens_size)]))
             
     #        for tt in range(len(mut_ind_inv)):
     #            r = te.loada(ens_model[mut_ind_inv[tt]])
