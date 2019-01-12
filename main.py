@@ -67,12 +67,12 @@ def mutate_and_evaluate(listantStr, listdist):
                 r.getScaledConcentrationControlCoefficientMatrix()), axis=0)
         
         stt = [[],[],[]]
-        st = ens_st[0]
+        rl = ens_rl[0]
         
         o = 0
         
         while ((stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or
-                st in ens_st) and (o < maxIter_mut)):
+                rl in ens_rl) and (o < maxIter_mut)):
             rct = np.array(antimony.getReactantNames(module)).tolist()
             prd = np.array(antimony.getProductNames(module)).tolist()
             
@@ -285,7 +285,7 @@ def mutate_and_evaluate(listantStr, listdist):
                                 eval_dist[m] = dist_i
                                 r.reset()
                                 eval_model[m] = r.getAntimony(current=True)
-                                ens_st.append(st)
+                                ens_rl.append(rl)
                             else:
                                 eval_dist[m] = listdist[m]
                                 eval_model[m] = listantStr[m]
@@ -307,7 +307,7 @@ def initialize():
     
     ens_dist = np.empty(ens_size)
     ens_model = np.empty(ens_size, dtype='object')
-    ens_st = []
+    ens_rl = []
     
     # Initial Random generation
     while (numGoodModels < ens_size):
@@ -315,7 +315,7 @@ def initialize():
         st = ng.getFullStoichiometryMatrix(rl, ns).tolist()
         stt = ng.removeBoundaryNodes(np.array(st))
         # Ensure no redundant model
-        while (stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or st in ens_st):
+        while (stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or rl in ens_rl):
             rl = ng.generateReactionList(ns, nr, realBoundaryIdsInd)
             st = ng.getFullStoichiometryMatrix(rl, ns).tolist()
             stt = ng.removeBoundaryNodes(np.array(st))
@@ -371,7 +371,7 @@ def initialize():
                         ens_dist[numGoodModels] = dist_i
                         r.reset()
                         ens_model[numGoodModels] = r.getAntimony(current=True)
-                        ens_st.append(st)
+                        ens_rl.append(rl)
                         
                         numGoodModels = numGoodModels + 1
         except:
@@ -387,7 +387,7 @@ def initialize():
     print("Number of total iterations = " + str(numIter))
     print("Number of bad models = " + str(numBadModels))
     
-    return ens_dist, ens_model, ens_st
+    return ens_dist, ens_model, ens_rl
 
 
 def random_gen(listAntStr, listDist):
@@ -406,7 +406,7 @@ def random_gen(listAntStr, listDist):
         stt = ng.removeBoundaryNodes(np.array(st))
         # Ensure no redundant models
         while ((stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or
-                st in ens_st) and (d < maxIter_gen)):
+                rl in ens_rl) and (d < maxIter_gen)):
             rl = ng.generateReactionList(ns, nr, realBoundaryIdsInd)
             st = ng.getFullStoichiometryMatrix(rl, ns).tolist()
             stt = ng.removeBoundaryNodes(np.array(st))
@@ -470,7 +470,7 @@ def random_gen(listAntStr, listDist):
                                 rnd_dist[l] = dist_i
                                 r.reset()
                                 rnd_model[l] = r.getAntimony(current=True)
-                                ens_st.append(st)
+                                ens_rl.append(rl)
                             else:
                                 rnd_dist[l] = listDist[l]
                                 rnd_model[l] = listAntStr[l]
@@ -604,7 +604,7 @@ if __name__ == '__main__':
         t1 = time.time()
         
         # Initialize
-        ens_dist, ens_model, ens_st = initialize()
+        ens_dist, ens_model, ens_rl = initialize()
         
         dist_top_ind = np.argsort(ens_dist)
         dist_top = ens_dist[dist_top_ind]
@@ -782,7 +782,7 @@ if __name__ == '__main__':
             
             if EXPORT_OUTPUT:
                 ioutils.exportOutputs(model_col, dist_col, best_dist, avg_dist, 
-                                      settings, t2-t1, ens_st, path=EXPORT_PATH)
+                                      settings, t2-t1, ens_rl, path=EXPORT_PATH)
 
         
 
