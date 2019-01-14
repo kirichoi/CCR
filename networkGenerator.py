@@ -34,28 +34,88 @@ import numpy as np
 import copy
 
 class TReactionType:
-    UNIUNI = 0
-    BIUNI = 1
-    UNIBI = 2
-    BIBI = 3
+    UNIUNI_N = 0
+    UNIUNI_A = 1
+    UNIUNI_I = 2
+    UNIUNI_AI = 3
+    BIUNI_N = 4
+    BIUNI_A = 5
+    BIUNI_I = 6
+    BIUNI_AI = 7
+    UNIBI_N = 8
+    UNIBI_A = 9
+    UNIBI_I = 10
+    UNIBI_AI = 11
+    BIBI_N = 12
+    BIBI_A = 13
+    BIBI_I = 14
+    BIBI_AI = 15
       
+    
 class TReactionProbabilities:
     UniUni = 0.7
     BiUni = 0.125
     UniBi = 0.125
     BiBI  = 0.05
-     
-      
-def pickReactionType():
-    rt = np.random.random()
-    if rt < TReactionProbabilities.UniUni:
-        return TReactionType.UNIUNI
-    elif rt < TReactionProbabilities.UniUni + TReactionProbabilities.BiUni:
-        return TReactionType.BIUNI
-    elif rt < TReactionProbabilities.UniUni + TReactionProbabilities.BiUni + TReactionProbabilities.UniBi:
-        return TReactionType.UNIBI
-    return TReactionType.BIBI
     
+    
+class RateLawProb:
+    default = 0.83
+    inhib = 0.08
+    activ = 0.08
+    inhibactiv = 0.01
+
+#def pickRateLawType():
+#    rt = np.random.random()
+#    if rt < RateLawProb.default:
+#        return 0
+#    elif rt < RateLawProb.default + RateLawProb.inhib:
+#        return 1
+#    elif rt < RateLawProb.default + RateLawProb.inhib + RateLawProb.activ:
+#        return 2
+#    return 3
+     
+
+def pickReactionType():
+    rt1 = np.random.random()
+    rt2 = np.random.random()
+    if rt1 < TReactionProbabilities.UniUni:
+        if rt2 < RateLawProb.default:
+            return TReactionType.UNIUNI_N
+        elif rt2 < RateLawProb.default + RateLawProb.activ:
+            return TReactionType.UNIUNI_A
+        elif rt2 < RateLawProb.default + RateLawProb.activ + RateLawProb.inhib:
+            return TReactionType.UNIUNI_I
+        else:
+            return TReactionType.UNIUNI_AI
+    elif rt1 < TReactionProbabilities.UniUni + TReactionProbabilities.BiUni:
+        if rt2 < RateLawProb.default:
+            return TReactionType.BIUNI_N
+        elif rt2 < RateLawProb.default + RateLawProb.activ:
+            return TReactionType.BIUNI_A
+        elif rt2 < RateLawProb.default + RateLawProb.activ + RateLawProb.inhib:
+            return TReactionType.BIUNI_I
+        else:
+            return TReactionType.BIUNI_AI
+    elif rt1 < TReactionProbabilities.UniUni + TReactionProbabilities.BiUni + TReactionProbabilities.UniBi:
+        if rt2 < RateLawProb.default:
+            return TReactionType.UNIBI_N
+        elif rt2 < RateLawProb.default + RateLawProb.activ:
+            return TReactionType.UNIBI_A
+        elif rt2 < RateLawProb.default + RateLawProb.activ + RateLawProb.inhib:
+            return TReactionType.UNIBI_I
+        else:
+            return TReactionType.UNIBI_AI
+    else:
+        if rt2 < RateLawProb.default:
+            return TReactionType.BIBI_N
+        elif rt2 < RateLawProb.default + RateLawProb.activ:
+            return TReactionType.BIBI_A
+        elif rt2 < RateLawProb.default + RateLawProb.activ + RateLawProb.inhib:
+            return TReactionType.BIBI_I
+        else:
+            return TReactionType.BIBI_AI
+
 
 # Generates a reaction network in the form of a reaction list
 # reactionList = [nSpecies, reaction, ....]
@@ -65,15 +125,17 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
     for r in range(nReactions):
         rct = [col[1] for col in reactionList]
         prd = [col[2] for col in reactionList]
-        rateConstant = 0.5  #np.random.uniform(1e-3, 1.)
+        #rateConstant = 0.5  #np.random.uniform(1e-3, 1.)
         rt = pickReactionType()
         
-        if rt == TReactionType.UNIUNI:
+        if rt <= TReactionType.UNIUNI_AI:
             # UniUni
             rct_id = np.random.choice(np.arange(nSpecies), size=1)
             prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
+            all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
+            all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
             
-            while (np.any(np.isin(rct_id, boundaryIdx))) and (np.any(np.isin(prd_id, boundaryIdx))):
+            while ((np.any(np.isin(rct_id, boundaryIdx))) and (np.any(np.isin(prd_id, boundaryIdx)))) or (len(set(all_rct) & set(all_prd)) > 0):
                 rct_id = np.random.choice(np.arange(nSpecies), size=1)
                 prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
                 
@@ -87,19 +149,42 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
                     all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
             
-            reactionList.append ([rt, [rct_id[0]], [prd_id[0]], rateConstant]) 
+            if rt == TReactionType.UNIUNI_N:
+                act_id = []
+                inhib_id = []
+            elif rt == TReactionType.UNIUNI_A:
+                act_id = np.random.choice(np.delete(np.delete(np.arange(nSpecies), rct_id), prd_id), size=1).tolist()
+                inhib_id = []
+                if len(act_id) == 0:
+                    rt = TReactionType.UNIUNI_N
+            elif rt == TReactionType.UNIUNI_I:
+                act_id = []
+                inhib_id = np.random.choice(np.delete(np.delete(np.arange(nSpecies), rct_id), prd_id), size=1).tolist()
+                if len(inhib_id) == 0:
+                    rt = TReactionType.UNIUNI_N
+            else:
+                reg_id = np.random.choice(np.delete(np.delete(np.arange(nSpecies), rct_id), prd_id), size=2)
+                act_id = [reg_id[0]]
+                inhib_id = [reg_id[1]]
+                if len(reg_id) == 0:
+                    rt = TReactionType.UNIUNI_N
+            
+            reactionList.append ([rt, [rct_id[0]], [prd_id[0]], act_id, inhib_id])
 
-        elif rt == TReactionType.BIUNI:
+        elif (rt > TReactionType.UNIUNI_AI) and (rt <= TReactionType.BIUNI_AI):
             # BiUni
             rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
             prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
+            all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
+                                                   rct_id[1]] or x == [rct_id[1], rct_id[0]]]
+            all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
             
-            while (np.any(np.isin(rct_id, boundaryIdx))) and (np.any(np.isin(prd_id, boundaryIdx))):
+            while ((np.any(np.isin(rct_id, boundaryIdx))) and (np.any(np.isin(prd_id, boundaryIdx)))) or (len(set(all_rct) & set(all_prd)) > 0):
                 rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
                 # pick a product but only products that don't include the reactants
                 prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
                 
-                 # Search for potentially identical reactions
+                # Search for potentially identical reactions
                 all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
                                                    rct_id[1]] or x == [rct_id[1], rct_id[0]]]
                 all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
@@ -111,14 +196,37 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                                                    rct_id[1]] or x == [rct_id[1], rct_id[0]]]
                     all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
             
-            reactionList.append ([rt, [rct_id[0], rct_id[1]], [prd_id[0]], rateConstant]) 
+            if rt == TReactionType.BIUNI_N:
+                act_id = []
+                inhib_id = []
+            elif rt == TReactionType.BIUNI_A:
+                act_id = np.random.choice(np.delete(np.delete(np.arange(nSpecies), rct_id), prd_id), size=1).tolist()
+                inhib_id = []
+                if len(act_id) == 0:
+                    rt = TReactionType.BIUNI_N
+            elif rt == TReactionType.BIUNI_I:
+                act_id = []
+                inhib_id = np.random.choice(np.delete(np.delete(np.arange(nSpecies), rct_id), prd_id), size=1).tolist()
+                if len(inhib_id) == 0:
+                    rt = TReactionType.BIUNI_N
+            else:
+                reg_id = np.random.choice(np.delete(np.delete(np.arange(nSpecies), rct_id), prd_id), size=2)
+                act_id = [reg_id[0]]
+                inhib_id = [reg_id[1]]
+                if len(reg_id) == 0:
+                    rt = TReactionType.BIUNI_N
+            
+            reactionList.append ([rt, [rct_id[0], rct_id[1]], [prd_id[0]], act_id, inhib_id]) 
         
-        elif rt == TReactionType.UNIBI:
+        elif (rt > TReactionType.BIUNI_AI) and (rt <= TReactionType.UNIBI_AI):
             # UniBi
             rct_id = np.random.choice(np.arange(nSpecies), size=1)
             prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
+            all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
+            all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
+                                                   prd_id[1]] or x == [prd_id[1], prd_id[0]]]
             
-            while (np.any(np.isin(rct_id, boundaryIdx))) and (np.any(np.isin(prd_id, boundaryIdx))):
+            while ((np.any(np.isin(rct_id, boundaryIdx))) and (np.any(np.isin(prd_id, boundaryIdx)))) or (len(set(all_rct) & set(all_prd)) > 0):
                 rct_id = np.random.choice(np.arange(nSpecies), size=1)
                 # pick a product but only products that don't include the reactant
                 prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
@@ -134,15 +242,39 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
                     all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
                                                    prd_id[1]] or x == [prd_id[1], prd_id[0]]]
-            
-            reactionList.append ([rt, [rct_id[0]], [prd_id[0], prd_id[1]], rateConstant]) 
+                    
+            if rt == TReactionType.UNIBI_N:
+                act_id = []
+                inhib_id = []
+            elif rt == TReactionType.UNIBI_A:
+                act_id = np.random.choice(np.delete(np.delete(np.arange(nSpecies), rct_id), prd_id), size=1).tolist()
+                inhib_id = []
+                if len(act_id) == 0:
+                    rt = TReactionType.UNIBI_N
+            elif rt == TReactionType.UNIBI_I:
+                act_id = []
+                inhib_id = np.random.choice(np.delete(np.delete(np.arange(nSpecies), rct_id), prd_id), size=1).tolist()
+                if len(inhib_id) == 0:
+                    rt = TReactionType.UNIBI_N
+            else:
+                reg_id = np.random.choice(np.delete(np.delete(np.arange(nSpecies), rct_id), prd_id), size=2)
+                act_id = [reg_id[0]]
+                inhib_id = [reg_id[1]]
+                if len(reg_id) == 0:
+                    rt = TReactionType.UNIBI_N
+                    
+            reactionList.append ([rt, [rct_id[0]], [prd_id[0], prd_id[1]], act_id, inhib_id]) 
         
         else:
             # BiBi
             rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
             prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
+            all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
+                                                   rct_id[1]] or x == [rct_id[1], rct_id[0]]]
+            all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
+                                                   prd_id[1]] or x == [prd_id[1], prd_id[0]]]
             
-            while (np.any(np.isin(rct_id, boundaryIdx))) and (np.any(np.isin(prd_id, boundaryIdx))):
+            while ((np.any(np.isin(rct_id, boundaryIdx))) and (np.any(np.isin(prd_id, boundaryIdx)))) or (len(set(all_rct) & set(all_prd)) > 0):
                 rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
                 # pick a product but only products that don't include the reactant
                 prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
@@ -161,7 +293,27 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
                                                    prd_id[1]] or x == [prd_id[1], prd_id[0]]]
             
-            reactionList.append ([rt, [rct_id[0], rct_id[1]], [prd_id[0], prd_id[1]], rateConstant])
+            if rt == TReactionType.BIBI_N:
+                act_id = []
+                inhib_id = []
+            elif rt == TReactionType.BIBI_A:
+                act_id = np.random.choice(np.delete(np.delete(np.arange(nSpecies), rct_id), prd_id), size=1).tolist()
+                inhib_id = []
+                if len(act_id) == 0:
+                    rt = TReactionType.BIBI_N
+            elif rt == TReactionType.BIBI_I:
+                act_id = []
+                inhib_id = np.random.choice(np.delete(np.delete(np.arange(nSpecies), rct_id), prd_id), size=1).tolist()
+                if len(inhib_id) == 0:
+                    rt = TReactionType.BIBI_N
+            else:
+                reg_id = np.random.choice(np.delete(np.delete(np.arange(nSpecies), rct_id), prd_id), size=2)
+                act_id = [reg_id[0]]
+                inhib_id = [reg_id[1]]
+                if len(reg_id) == 0:
+                    rt = TReactionType.UNIBI_N
+            
+            reactionList.append ([rt, [rct_id[0], rct_id[1]], [prd_id[0], prd_id[1]], act_id, inhib_id])
         
     return reactionList
     
@@ -174,14 +326,14 @@ def getFullStoichiometryMatrix(reactionList, ns):
     st = np.zeros((ns, len(reactionListCopy)))
     
     for index, rind in enumerate(reactionListCopy):
-        if rind[0] == TReactionType.UNIUNI:
+        if (rind[0] <= TReactionType.UNIUNI_AI):
             # UniUni
             reactant = reactionListCopy[index][1][0]
             st[reactant, index] = st[reactant, index] - 1
             product = reactionListCopy[index][2][0]
             st[product, index] = st[product, index] + 1
      
-        elif rind[0] == TReactionType.BIUNI:
+        elif (rind[0] > TReactionType.UNIUNI_AI) and (rind[0] <= TReactionType.BIUNI_AI):
             # BiUni
             reactant1 = reactionListCopy[index][1][0]
             st[reactant1, index] = st[reactant1, index] - 1
@@ -190,7 +342,7 @@ def getFullStoichiometryMatrix(reactionList, ns):
             product = reactionListCopy[index][2][0]
             st[product, index] = st[product, index] + 1
 
-        elif rind[0] == TReactionType.UNIBI:
+        elif (rind[0] > TReactionType.BIUNI_AI) and (rind[0] <= TReactionType.UNIBI_AI):
             # UniBi
             reactant1 = reactionListCopy[index][1][0]
             st[reactant1, index] = st[reactant1, index] - 1
@@ -252,12 +404,141 @@ def removeBoundaryNodes(st):
     return [np.delete(st, indexes + orphanSpecies, axis=0), floatingIds, boundaryIds]
 
 
-def generateRateLaw(rt, rl):
-    pass
+def generateRateLaw(rl, floatingIds, boundaryIds, rlt, Jind):
+    
+    Klist = []
+    
+    T = ''
+    D = ''
+    Rreg = ''
+    Dreg = ''
+    
+    # T
+    T = T + '(Kf_' + str(Jind) + '*'
+    Klist.append('Kf_' + str(Jind))
+    Klist.append('h_' + str(Jind))
+    
+    T = T + '('
+    for i in range(len(rl[Jind][1])):
+        T = T + '(S' + str(rl[Jind][1][i]) + '/Km_' + str(rl[Jind][1][i]) + ')^h_' + str(Jind)
+        Klist.append('Km_' + str(rl[Jind][1][i]))
+        if i < len(rl[Jind][1]) - 1:
+            T = T + '*'
+    T = T + ')'
+    
+    T = T + '-Kr_' + str(Jind) + '*'
+    Klist.append('Kr_' + str(Jind))
+    
+    T = T + '('
+    for i in range(len(rl[Jind][2])):
+        T = T + '(S' + str(rl[Jind][2][i]) + '/Km_' + str(rl[Jind][2][i]) +')^h_' + str(Jind)
+        Klist.append('Km_' + str(rl[Jind][2][i]))
+        if i < len(rl[Jind][2]) - 1:
+            T = T + '*'
+            
+    T = T + '))'
+        
+    # D
+    D = D + '('
+    
+    for i in range(len(rl[Jind][1])):
+        D = D + '((1 + (S' + str(rl[Jind][1][i]) + '/Km_' + str(rl[Jind][1][i]) + '))^h_' + str(Jind) + ')'
+        Klist.append('Km_' + str(rl[Jind][1][i]))
+        if i < len(rl[Jind][1]) - 1:
+            D = D + '*'
+    
+    D = D + '+'
+    
+    for i in range(len(rl[Jind][2])):
+        D = D + '((1 + (S' + str(rl[Jind][2][i]) + '/Km_' + str(rl[Jind][2][i]) + '))^h_' + str(Jind) + ')'
+        Klist.append('Km_' + str(rl[Jind][2][i]))
+        if i < len(rl[Jind][2]) - 1:
+            D = D + '*'
+    
+    D = D + '-1)'
+        
+    #Rreg
+    if (rlt == 1) or (rlt == 3):
+        pass
+    
+    #Dreg
+    if (rlt == 2) or (rlt == 3):
+        pass
+    
+    
+    rateLaw = Rreg + T + '/(' + D +  Dreg + ')'
+        
+    return rateLaw, Klist
+
+
+def generateSimpleRateLaw(rl, floatingIds, boundaryIds, Jind):
+    
+    Klist = []
+    
+    T = ''
+    D = ''
+    ACT = ''
+    INH = ''
+    
+    # T
+    T = T + '(Kf_' + str(Jind) + '*'
+    Klist.append('Kf_' + str(Jind))
+    
+    for i in range(len(rl[Jind][1])):
+        T = T + 'S' + str(rl[Jind][1][i])
+        if i < len(rl[Jind][1]) - 1:
+            T = T + '*'
+    
+    T = T + ' - Kr_' + str(Jind) + '*'
+    Klist.append('Kr_' + str(Jind))
+    
+    for i in range(len(rl[Jind][2])):
+        T = T + 'S' + str(rl[Jind][2][i])
+        if i < len(rl[Jind][2]) - 1:
+            T = T + '*'
+            
+    T = T + ')'
+        
+    # D
+    D = D + '1 + '
+    
+    for i in range(len(rl[Jind][1])):
+        D = D + 'S' + str(rl[Jind][1][i])
+        if i < len(rl[Jind][1]) - 1:
+            D = D + '*'
+    
+    D = D + ' + '
+    
+    for i in range(len(rl[Jind][2])):
+        D = D + 'S' + str(rl[Jind][2][i])
+        if i < len(rl[Jind][2]) - 1:
+            D = D + '*'
+    
+    # Activation
+    if (len(rl[Jind][3]) > 0):
+        ACT = ACT + ' + '
+        for i in range(len(rl[Jind][3])):
+            ACT = ACT + '1/S' + str(rl[Jind][3][i])
+            if i < len(rl[Jind][3]) - 1:
+                ACT = ACT + ' + '
+    
+    # Inhibition
+    if (len(rl[Jind][4]) > 0):
+        INH = INH + ' + '
+        for i in range(len(rl[Jind][4])):
+            INH = INH + 'S' + str(rl[Jind][4][i])
+            if i < len(rl[Jind][4]) - 1:
+                INH = INH + ' + '
+    
+    
+    rateLaw = T + '/(' + D + ACT + INH + ')'
+        
+    return rateLaw, Klist
 
 
 def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundary_init=None):
     reactionListCopy = copy.deepcopy(reactionList)
+    Klist = []
     
     real = np.append(floatingIds, boundaryIds)
     if type(real[0]) == 'str' or type(real[0]) == np.str_:
@@ -282,28 +563,37 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
 
     # List reactions
     for index, rind in enumerate(reactionListCopy):
-        if rind[0] == TReactionType.UNIUNI:
+        if (rind[0] <= TReactionType.UNIUNI_AI):
             # UniUni
             antStr = antStr + 'J' + str(index) + ': S' + str(real[tar.index(reactionListCopy[index][1][0])])
             antStr = antStr + ' -> '
             antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][0])])
-            antStr = antStr + '; k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])])
-        elif rind[0] == TReactionType.BIUNI:
+            antStr = antStr + '; '#k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])])
+            RateLaw, klist_i = generateRateLaw(reactionList, floatingIds, boundaryIds, 0, index)
+            antStr = antStr + RateLaw
+            Klist.append(klist_i)
+        elif (rind[0] > TReactionType.UNIUNI_AI) and (rind[0] <= TReactionType.BIUNI_AI):
             # BiUni
             antStr = antStr + 'J' + str(index) + ': S' + str(real[tar.index(reactionListCopy[index][1][0])])
             antStr = antStr + ' + '
             antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][1][1])])
             antStr = antStr + ' -> '
             antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][0])])
-            antStr = antStr + '; k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])]) + '*S' + str(real[tar.index(reactionListCopy[index][1][1])])
-        elif rind[0] == TReactionType.UNIBI:
+            antStr = antStr + '; '#k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])]) + '*S' + str(real[tar.index(reactionListCopy[index][1][1])])
+            RateLaw, klist_i = generateRateLaw(reactionList, floatingIds, boundaryIds, 0, index)
+            antStr = antStr + RateLaw
+            Klist.append(klist_i)
+        elif (rind[0] > TReactionType.BIIUNI_AI) and (rind[0] <= TReactionType.UNIBI_AI):
             # UniBi
             antStr = antStr + 'J' + str(index) + ': S' + str(real[tar.index(reactionListCopy[index][1][0])])
             antStr = antStr + ' -> '
             antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][0])])
             antStr = antStr + ' + '
             antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][1])])
-            antStr = antStr + '; k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])])
+            antStr = antStr + '; '#k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])])
+            RateLaw, klist_i = generateRateLaw(reactionList, floatingIds, boundaryIds, 0, index)
+            antStr = antStr + RateLaw
+            Klist.append(klist_i)
         else:
             # BiBi
             antStr = antStr + 'J' + str(index) + ': S' + str(real[tar.index(reactionListCopy[index][1][0])])
@@ -313,13 +603,25 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
             antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][0])])
             antStr = antStr + ' + '
             antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][1])])
-            antStr = antStr + '; k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])]) + '*S' + str(real[tar.index(reactionListCopy[index][1][1])])
+            antStr = antStr + '; '#k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])]) + '*S' + str(real[tar.index(reactionListCopy[index][1][1])])
+            RateLaw, klist_i = generateRateLaw(reactionList, floatingIds, boundaryIds, 0, index)
+            antStr = antStr + RateLaw
+            Klist.append(klist_i)
         antStr = antStr + ';\n'
 
     # List rate constants
     antStr = antStr + '\n'
-    for index, rind in enumerate(reactionListCopy):
-        antStr = antStr + 'k' + str(index) + ' = ' + str(rind[3]) + '\n'
+    Klist_f = [item for sublist in Klist for item in sublist]
+    Klist_f = np.unique(Klist_f)
+    for i in range(len(Klist_f)):
+        if Klist_f[i].startswith('Km'):
+            antStr = antStr + Klist_f[i] + ' = 1\n'
+        elif Klist_f[i].startswith('h'):
+            antStr = antStr + Klist_f[i] + ' = 1\n'
+        elif Klist_f[i].startswith('Kf'):
+            antStr = antStr + Klist_f[i] + ' = 1\n'
+        elif Klist_f[i].startswith('Kr'):
+            antStr = antStr + Klist_f[i] + ' = 0.5\n'
         
     # Initialize boundary species
     antStr = antStr + '\n'
@@ -336,6 +638,23 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
         
     return antStr
      
+
+def generateParameterBoundary(glgp):
+    
+    pBound = []
+    
+    for i in range(len(glgp)):
+        if glgp[i].startswith('Km'):
+            pBound.append((1e-3, 10.))
+        elif glgp[i].startswith('h'):
+            pBound.append((1e-1, 4.))
+        elif glgp[i].startswith('Kf'):
+            pBound.append((1e-3, 10.))
+        elif glgp[i].startswith('Kr'):
+            pBound.append((1e-3, 10.))
+
+    return pBound
+    
 
 def generateLinearChainAnt(ns):
     order = np.random.sample(range(ns), ns)
