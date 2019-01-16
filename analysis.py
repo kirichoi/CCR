@@ -101,12 +101,13 @@ def ensembleTimeCourse(model_col):
 
 def isConnected(rl):
     """
+    Check if a reaction list features connected graph.
     
+    :param rl: reaction list
     """
     
     G = nx.Graph()
     
-    # add edges
     for i in range(len(rl)):
         for j in range(len(rl[i][1])):
             G.add_edges_from([(rl[i][1][j], str(i))])
@@ -121,7 +122,6 @@ def isConnected(rl):
             G.add_edges_from([(rl[i][4][m], str(i))])
     
     return nx.is_connected(G)
-    
 
 
 def selectWithCutoff(model_top, dist_top, cutoff=0.1):
