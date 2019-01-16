@@ -71,8 +71,10 @@ def mutate_and_evaluate(listantStr, listdist):
         
         o = 0
         
+        connected = False
+    
         while ((stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or
-                rl in ens_rl) and (o < maxIter_mut)):
+                rl in ens_rl or not connected) and (o < maxIter_mut)):
             rct = np.array(antimony.getReactantNames(module)).tolist()
             prd = np.array(antimony.getProductNames(module)).tolist()
             
@@ -220,8 +222,9 @@ def mutate_and_evaluate(listantStr, listdist):
                 rct_ind = list(map(int, rct_ind))
                 prd_ind = [s.replace('S', '') for s in prd[i]]
                 prd_ind = list(map(int, prd_ind))
-                reactionList.append([rtype, rct_ind, prd_ind, param_val[i]]) 
+                reactionList.append([rtype, rct_ind, prd_ind, param_val[i]])
             
+            connected = analysis.isConnected(reactionList)
             st = ng.getFullStoichiometryMatrix(reactionList, ns).tolist()
             stt = ng.removeBoundaryNodes(np.array(st))
             o += 1
