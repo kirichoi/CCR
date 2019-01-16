@@ -173,7 +173,7 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     if len(reg_id) == 0:
                         rt = TReactionType.UNIUNI_N
                 
-                reactionList.append ([rt, [rct_id[0]], [prd_id[0]], act_id, inhib_id])
+                reactionList.append([rt, [rct_id[0]], [prd_id[0]], act_id, inhib_id])
     
             elif (rt > TReactionType.UNIUNI_AI) and (rt <= TReactionType.BIUNI_AI):
                 # BiUni
@@ -220,7 +220,7 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     if len(reg_id) == 0:
                         rt = TReactionType.BIUNI_N
                 
-                reactionList.append ([rt, [rct_id[0], rct_id[1]], [prd_id[0]], act_id, inhib_id]) 
+                reactionList.append([rt, [rct_id[0], rct_id[1]], [prd_id[0]], act_id, inhib_id]) 
             
             elif (rt > TReactionType.BIUNI_AI) and (rt <= TReactionType.UNIBI_AI):
                 # UniBi
@@ -487,16 +487,16 @@ def generateSimpleRateLaw(rl, floatingIds, boundaryIds, Jind):
     INH = ''
     
     # T
-    T = T + '(Kf_' + str(Jind) + '*'
-    Klist.append('Kf_' + str(Jind))
+    T = T + '(Kf' + str(Jind) + '*'
+    Klist.append('Kf' + str(Jind))
     
     for i in range(len(rl[Jind][1])):
         T = T + 'S' + str(rl[Jind][1][i])
         if i < len(rl[Jind][1]) - 1:
             T = T + '*'
     
-    T = T + ' - Kr_' + str(Jind) + '*'
-    Klist.append('Kr_' + str(Jind))
+    T = T + ' - Kr' + str(Jind) + '*'
+    Klist.append('Kr' + str(Jind))
     
     for i in range(len(rl[Jind][2])):
         T = T + 'S' + str(rl[Jind][2][i])
@@ -522,22 +522,19 @@ def generateSimpleRateLaw(rl, floatingIds, boundaryIds, Jind):
     
     # Activation
     if (len(rl[Jind][3]) > 0):
-        ACT = ACT + ' + '
         for i in range(len(rl[Jind][3])):
-            ACT = ACT + '1/S' + str(rl[Jind][3][i])
-            if i < len(rl[Jind][3]) - 1:
-                ACT = ACT + ' + '
-    
+            ACT = ACT + '(1 + Ka' + str(Jind) + str(i) + '*'
+            Klist.append('Ka' + str(Jind) + str(i))
+            ACT = ACT + 'S' + str(rl[Jind][3][i]) + ')*'
+            
     # Inhibition
     if (len(rl[Jind][4]) > 0):
-        INH = INH + ' + '
         for i in range(len(rl[Jind][4])):
-            INH = INH + 'S' + str(rl[Jind][4][i])
-            if i < len(rl[Jind][4]) - 1:
-                INH = INH + ' + '
+            INH = INH + '(1/(1 + Ki' + str(Jind) + str(i) + '*'
+            Klist.append('Ki' + str(Jind) + str(i))
+            INH = INH + 'S' + str(rl[Jind][4][i]) + '))*'
     
-    
-    rateLaw = T + '/(' + D + ACT + INH + ')'
+    rateLaw = ACT + INH + T + '/(' + D + ')'
         
     return rateLaw, Klist
 
@@ -575,7 +572,7 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
             antStr = antStr + ' -> '
             antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][0])])
             antStr = antStr + '; '#k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])])
-            RateLaw, klist_i = generateRateLaw(reactionList, floatingIds, boundaryIds, 0, index)
+            RateLaw, klist_i = generateSimpleRateLaw(reactionList, floatingIds, boundaryIds, index)
             antStr = antStr + RateLaw
             Klist.append(klist_i)
         elif (rind[0] > TReactionType.UNIUNI_AI) and (rind[0] <= TReactionType.BIUNI_AI):
@@ -586,10 +583,10 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
             antStr = antStr + ' -> '
             antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][0])])
             antStr = antStr + '; '#k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])]) + '*S' + str(real[tar.index(reactionListCopy[index][1][1])])
-            RateLaw, klist_i = generateRateLaw(reactionList, floatingIds, boundaryIds, 0, index)
+            RateLaw, klist_i = generateSimpleRateLaw(reactionList, floatingIds, boundaryIds, index)
             antStr = antStr + RateLaw
             Klist.append(klist_i)
-        elif (rind[0] > TReactionType.BIIUNI_AI) and (rind[0] <= TReactionType.UNIBI_AI):
+        elif (rind[0] > TReactionType.BIUNI_AI) and (rind[0] <= TReactionType.UNIBI_AI):
             # UniBi
             antStr = antStr + 'J' + str(index) + ': S' + str(real[tar.index(reactionListCopy[index][1][0])])
             antStr = antStr + ' -> '
@@ -597,7 +594,7 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
             antStr = antStr + ' + '
             antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][1])])
             antStr = antStr + '; '#k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])])
-            RateLaw, klist_i = generateRateLaw(reactionList, floatingIds, boundaryIds, 0, index)
+            RateLaw, klist_i = generateSimpleRateLaw(reactionList, floatingIds, boundaryIds, index)
             antStr = antStr + RateLaw
             Klist.append(klist_i)
         else:
@@ -610,7 +607,7 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
             antStr = antStr + ' + '
             antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][1])])
             antStr = antStr + '; '#k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])]) + '*S' + str(real[tar.index(reactionListCopy[index][1][1])])
-            RateLaw, klist_i = generateRateLaw(reactionList, floatingIds, boundaryIds, 0, index)
+            RateLaw, klist_i = generateSimpleRateLaw(reactionList, floatingIds, boundaryIds, index)
             antStr = antStr + RateLaw
             Klist.append(klist_i)
         antStr = antStr + ';\n'
@@ -628,6 +625,10 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
             antStr = antStr + Klist_f[i] + ' = 1\n'
         elif Klist_f[i].startswith('Kr'):
             antStr = antStr + Klist_f[i] + ' = 0.5\n'
+        elif Klist_f[i].startswith('Ka'):
+            antStr = antStr + Klist_f[i] + ' = 1\n'
+        elif Klist_f[i].startswith('Ki'):
+            antStr = antStr + Klist_f[i] + ' = 1\n'
         
     # Initialize boundary species
     antStr = antStr + '\n'
@@ -658,6 +659,10 @@ def generateParameterBoundary(glgp):
             pBound.append((1e-3, 10.))
         elif glgp[i].startswith('Kr'):
             pBound.append((1e-3, 10.))
+        elif glgp[i].startswith('Ka'):
+            pBound.append((1e-1, 10.))
+        elif glgp[i].startswith('Ki'):
+            pBound.append((1e-1, 10.))
 
     return pBound
     
