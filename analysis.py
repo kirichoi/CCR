@@ -109,17 +109,17 @@ def isConnected(rl):
     G = nx.Graph()
     
     for i in range(len(rl)):
-        for j in range(len(rl[i][1])):
-            G.add_edges_from([(rl[i][1][j], str(i))])
+        for j in range(len(rl[i][3])):
+            G.add_edges_from([(rl[i][3][j], str(i))])
         
-        for k in range(len(rl[i][2])):
-            G.add_edges_from([(str(i), rl[i][2][k])])
+        for k in range(len(rl[i][4])):
+            G.add_edges_from([(str(i), rl[i][4][k])])
         
-        for l in range(len(rl[i][3])):
-            G.add_edges_from([(rl[i][3][l], str(i))])
+        for l in range(len(rl[i][5])):
+            G.add_edges_from([(rl[i][5][l], str(i))])
             
-        for m in range(len(rl[i][4])):
-            G.add_edges_from([(rl[i][4][m], str(i))])
+        for m in range(len(rl[i][6])):
+            G.add_edges_from([(rl[i][6][m], str(i))])
     
     return nx.is_connected(G)
 
