@@ -29,6 +29,10 @@ def f1(k_list, *args):
     
     args[0].setValues(args[0].getGlobalParameterIds(), k_list)
     
+#    ss =  args[0].steadyStateSolver
+#    ss.allow_approx = True
+#    ss.allow_presimulation = True
+    
     try:
         args[0].steadyState()
         objCC = args[0].getScaledConcentrationControlCoefficientMatrix()
@@ -307,9 +311,9 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                 counts = 0
                 countf = 0
                 
-                ss = r.steadyStateSolver
-                ss.allow_approx = True
-                ss.allow_presimulation = False
+#                ss = r.steadyStateSolver
+#                ss.allow_approx = True
+#                ss.allow_presimulation = True
                 r.steadyState()
                 
                 p_bound = ng.generateParameterBoundary(r.getGlobalParameterIds())
@@ -328,12 +332,12 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                     r.steadyState()
                     SS_i = r.getFloatingSpeciesConcentrations()
                     # Buggy model
-                    if np.any(SS_i > 1e5):
-                        r.reset()
-                        ss.allow_presimulation = True
-                        ss.presimulation_time = 100
-                        r.steadyState()
-                        SS_i = r.getFloatingSpeciesConcentrations()
+#                    if np.any(SS_i > 1e5):
+#                        r.reset()
+#                        ss.allow_presimulation = True
+#                        ss.presimulation_time = 100
+#                        r.steadyState()
+#                        SS_i = r.getFloatingSpeciesConcentrations()
                     if np.any(SS_i < 1e-5) or np.any(SS_i > 1e5):
                         eval_dist[m] = listdist[m]
                         eval_model[m] = listantStr[m]
@@ -404,9 +408,9 @@ def initialize():
             counts = 0
             countf = 0
             
-            ss = r.steadyStateSolver
-            ss.allow_approx = True
-            ss.allow_presimulation = False
+#            ss = r.steadyStateSolver
+#            ss.allow_approx = True
+#            ss.allow_presimulation = True
             r.steadyState()
             
             p_bound = ng.generateParameterBoundary(r.getGlobalParameterIds())
@@ -425,12 +429,12 @@ def initialize():
                 r.steadyState()
                 SS_i = r.getFloatingSpeciesConcentrations()
                 # Buggy model
-                if np.any(SS_i > 1e5):
-                    r.reset()
-                    ss.allow_presimulation = True
-                    ss.presimulation_time = 100
-                    r.steadyState()
-                    SS_i = r.getFloatingSpeciesConcentrations()
+#                if np.any(SS_i > 1e5):
+#                    r.reset()
+#                    ss.allow_presimulation = True
+#                    ss.presimulation_time = 100
+#                    r.steadyState()
+#                    SS_i = r.getFloatingSpeciesConcentrations()
                         
                 if np.any(SS_i < 1e-5) or np.any(SS_i > 1e5):
                     numBadModels += 1
@@ -506,9 +510,9 @@ def random_gen(listAntStr, listDist, listrl):
                 counts = 0
                 countf = 0
                 
-                ss = r.steadyStateSolver
-                ss.allow_approx = True
-                ss.allow_presimulation = False
+#                ss = r.steadyStateSolver
+#                ss.allow_approx = True
+#                ss.allow_presimulation = True
                 r.steadyState()
                 
                 p_bound = ng.generateParameterBoundary(r.getGlobalParameterIds())
@@ -528,12 +532,12 @@ def random_gen(listAntStr, listDist, listrl):
                     r.steadyState()
                     SS_i = r.getFloatingSpeciesConcentrations()
                     # Buggy model
-                    if np.any(SS_i > 1e5):
-                        r.reset()
-                        ss.allow_presimulation = True
-                        ss.presimulation_time = 100
-                        r.steadyState()
-                        SS_i = r.getFloatingSpeciesConcentrations()
+#                    if np.any(SS_i > 1e5):
+#                        r.reset()
+#                        ss.allow_presimulation = True
+#                        ss.presimulation_time = 100
+#                        r.steadyState()
+#                        SS_i = r.getFloatingSpeciesConcentrations()
                     if np.any(SS_i < 1e-5) or np.any(SS_i > 1e5):
                         rnd_dist[l] = listDist[l]
                         rnd_model[l] = listAntStr[l]
@@ -590,8 +594,8 @@ if __name__ == '__main__':
     ens_size = 100 # Size of output ensemble
     pass_size = int(ens_size/10) # Number of models passed on the next generation without mutation
     mut_size = int(ens_size/2) # Number of models to mutate
-    maxIter_gen = 100 # Maximum iteration allowed for random generation
-    maxIter_mut = 100 # Maximum iteration allowed for mutation
+    maxIter_gen = 1000 # Maximum iteration allowed for random generation
+    maxIter_mut = 1000 # Maximum iteration allowed for mutation
     
     # Optimizer settings
     optiMaxIter = 1000 # Maximum iteraction allowed for optimizer
@@ -626,10 +630,10 @@ if __name__ == '__main__':
         
         realRR = te.loada(realModel)
         
-        realSS = realRR.steadyStateSolver
-        realSS.allow_approx = False
-        realSS.allow_presimulation = False
-        realSS.presimulation_time = 100
+#        realSS = realRR.steadyStateSolver
+#        realSS.allow_approx = True
+#        realSS.allow_presimulation = True
+#        realSS.presimulation_time = 100
         
         realNumBoundary = realRR.getNumBoundarySpecies()
         realNumFloating = realRR.getNumFloatingSpecies()
