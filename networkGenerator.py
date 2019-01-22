@@ -115,8 +115,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
 #    while not connected:
     reactionList = []
     for r in range(nReactions):
-        rct = [col[1] for col in reactionList]
-        prd = [col[2] for col in reactionList]
+        rct = [col[3] for col in reactionList]
+        prd = [col[4] for col in reactionList]
         
         rType, regType, revType = pickReactionType()
         
