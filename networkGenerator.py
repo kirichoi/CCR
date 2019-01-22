@@ -63,8 +63,8 @@ class RLP:
     Inhibactiv = 0.01
     
 class REVP:
-    Irreversible = 0.6
-    Reversible = 0.4
+    Irreversible = 0.
+    Reversible = 1.
 
 #def pickRateLawType():
 #    rt = np.random.random()
@@ -517,12 +517,12 @@ def generateSimpleRateLaw(rl, floatingIds, boundaryIds, Jind):
         if i < len(rl[Jind][3]) - 1:
             D = D + '*'
     
-    D = D + ' + '
-    
-    for i in range(len(rl[Jind][4])):
-        D = D + 'S' + str(rl[Jind][4][i])
-        if i < len(rl[Jind][4]) - 1:
-            D = D + '*'
+    if rl[Jind][2] == Reversibility.REVERSIBLE:
+        D = D + ' + '
+        for i in range(len(rl[Jind][4])):
+            D = D + 'S' + str(rl[Jind][4][i])
+            if i < len(rl[Jind][4]) - 1:
+                D = D + '*'
     
     # Activation
     if (len(rl[Jind][5]) > 0):
@@ -645,7 +645,7 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
     
     # Initialize floating species
     for index, find in enumerate(floatingIds):
-        antStr = antStr + str(find) + ' = ' + '0\n'
+        antStr = antStr + str(find) + ' = ' + str(np.random.randint (1,6)) + '\n'
         
     return antStr
      
