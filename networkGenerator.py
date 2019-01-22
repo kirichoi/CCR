@@ -159,6 +159,9 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                 if len(reg_id) == 0:
                     regType = RegulationType.DEFAULT
             
+            if ((np.any(np.isin(rct_id, boundaryIdx))) or (np.any(np.isin(prd_id, boundaryIdx)))):
+                revType = Reversibility.IRREVERSIBLE
+            
             reactionList.append([rType, 
                                  regType, 
                                  revType, 
@@ -210,6 +213,9 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                 if len(reg_id) == 0:
                     regType = RegulationType.DEFAULT
             
+            if np.any(np.isin(prd_id, boundaryIdx)):
+                revType = Reversibility.IRREVERSIBLE
+            
             reactionList.append([rType, 
                                  regType, 
                                  revType, 
@@ -260,7 +266,10 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                 inhib_id = [reg_id[1]]
                 if len(reg_id) == 0:
                     regType = RegulationType.DEFAULT
-                    
+            
+            if np.any(np.isin(rct_id, boundaryIdx)):
+                revType = Reversibility.IRREVERSIBLE
+            
             reactionList.append ([rType, 
                                   regType, 
                                   revType,
