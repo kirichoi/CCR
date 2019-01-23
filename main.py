@@ -36,7 +36,13 @@ def f1(k_list, *args):
     try:
         args[0].steadyState()
         objCC = args[0].getScaledConcentrationControlCoefficientMatrix()
-        dist_obj = (np.linalg.norm(realConcCC - objCC))
+#        testCount = np.array(np.unravel_index(np.argsort(objCC, axis=None), objCC.shape)).T
+        dist_obj = (1/(1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(objCC))))) + 
+                    (np.linalg.norm(realConcCC - objCC)))
+#        + np.sum(args[0].getReactionRates() < 0))
+#                    + 1/(1 + np.sum((testCount == realCount).all(axis=1))))
+        
+#        dist_obj = (np.linalg.norm(realConcCC - objCC))
     except:
         countf += 1
         dist_obj = 10000
@@ -355,7 +361,13 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                             concCC_i = concCC_i[np.argsort(concCC_i_row)]
                             concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                             
-                            dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
+#                            count_i = np.array(np.unravel_index(np.argsort(concCC_i, axis=None), concCC_i.shape)).T
+                            dist_i = (1/(1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(concCC_i))))) + 
+                                        (np.linalg.norm(realConcCC - concCC_i)))
+#                            + np.sum(r.getReactionRates() < 0))
+#                                        + 1/(1 + np.sum((count_i == realCount).all(axis=1))))
+                            
+#                            dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
                             
                             if dist_i < listdist[m]:
                                 eval_dist[m] = dist_i
@@ -449,7 +461,13 @@ def initialize():
                         concCC_i = concCC_i[np.argsort(concCC_i_row)]
                         concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                         
-                        dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
+#                        count_i = np.array(np.unravel_index(np.argsort(concCC_i, axis=None), concCC_i.shape)).T
+                        dist_i = (1/(1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(concCC_i))))) + 
+                                    (np.linalg.norm(realConcCC - concCC_i)))
+#                        + np.sum(r.getReactionRates() < 0))
+#                                    + 1/(1 + np.sum((count_i == realCount).all(axis=1))))
+                        
+#                        dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
                         
                         ens_dist[numGoodModels] = dist_i
                         r.reset()
@@ -458,6 +476,7 @@ def initialize():
                         rl_track.append(rl)
                         
                         numGoodModels = numGoodModels + 1
+                        print(numGoodModels)
         except:
             numBadModels = numBadModels + 1
         antimony.clearPreviousLoads()
@@ -555,7 +574,13 @@ def random_gen(listAntStr, listDist, listrl):
                             concCC_i = concCC_i[np.argsort(concCC_i_row)]
                             concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                             
-                            dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
+#                            count_i = np.array(np.unravel_index(np.argsort(concCC_i, axis=None), concCC_i.shape)).T
+                            dist_i = (1/(1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(concCC_i))))) + 
+                                        (np.linalg.norm(realConcCC - concCC_i)))
+#                            + np.sum(r.getReactionRates() < 0))
+#                                        + 1/(1 + np.sum((count_i == realCount).all(axis=1))))
+                            
+#                            dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
                             
                             if dist_i < listDist[l]:
                                 rnd_dist[l] = dist_i
@@ -590,7 +615,7 @@ if __name__ == '__main__':
     modelType = 'FFL_r' # 'FFL', 'Linear', 'Nested', 'Branched'
     
     # General settings
-    n_gen = 300 # Number of generations
+    n_gen = 100 # Number of generations
     ens_size = 100 # Size of output ensemble
     pass_size = int(ens_size/10) # Number of models passed on the next generation without mutation
     mut_size = int(ens_size/2) # Number of models to mutate
@@ -598,9 +623,9 @@ if __name__ == '__main__':
     maxIter_mut = 1000 # Maximum iteration allowed for mutation
     
     # Optimizer settings
-    optiMaxIter = 1000 # Maximum iteraction allowed for optimizer
-    optiTol = 0.01
-    optiPolish = True
+    optiMaxIter = 100 # Maximum iteration allowed for optimizer
+    optiTol = 1.
+    optiPolish = False
     w1 = 1.0 # Weight for control coefficients when calculating the distance
     w2 = 1.0 # Weight for steady-state and flux when calculating the distance
     
@@ -666,6 +691,8 @@ if __name__ == '__main__':
         
         ns = realNumBoundary + realNumFloating # Number of species
         nr = realRR.getNumReactions() # Number of reactions
+        
+        realCount = np.array(np.unravel_index(np.argsort(realFluxCC, axis=None), realFluxCC.shape)).T
         
         print("Original Control Coefficients")
         print(realConcCC)
