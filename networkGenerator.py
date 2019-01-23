@@ -159,8 +159,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                 if len(reg_id) == 0:
                     regType = RegulationType.DEFAULT
             
-            if ((np.any(np.isin(rct_id, boundaryIdx))) or (np.any(np.isin(prd_id, boundaryIdx)))):
-                revType = Reversibility.IRREVERSIBLE
+#            if ((np.any(np.isin(rct_id, boundaryIdx))) or (np.any(np.isin(prd_id, boundaryIdx)))):
+#                revType = Reversibility.IRREVERSIBLE
             
             reactionList.append([rType, 
                                  regType, 
@@ -213,8 +213,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                 if len(reg_id) == 0:
                     regType = RegulationType.DEFAULT
             
-            if np.any(np.isin(prd_id, boundaryIdx)):
-                revType = Reversibility.IRREVERSIBLE
+#            if np.any(np.isin(prd_id, boundaryIdx)):
+#                revType = Reversibility.IRREVERSIBLE
             
             reactionList.append([rType, 
                                  regType, 
@@ -267,8 +267,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                 if len(reg_id) == 0:
                     regType = RegulationType.DEFAULT
             
-            if np.any(np.isin(rct_id, boundaryIdx)):
-                revType = Reversibility.IRREVERSIBLE
+#            if np.any(np.isin(rct_id, boundaryIdx)):
+#                revType = Reversibility.IRREVERSIBLE
             
             reactionList.append ([rType, 
                                   regType, 
@@ -630,11 +630,7 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
     Klist_f = [item for sublist in Klist for item in sublist]
 #    Klist_f = np.unique(Klist_f)
     for i in range(len(Klist_f)):
-        if Klist_f[i].startswith('Km'):
-            antStr = antStr + Klist_f[i] + ' = 1\n'
-        elif Klist_f[i].startswith('h'):
-            antStr = antStr + Klist_f[i] + ' = 1\n'
-        elif Klist_f[i].startswith('Kf'):
+        if Klist_f[i].startswith('Kf'):
             antStr = antStr + Klist_f[i] + ' = 1\n'
         elif Klist_f[i].startswith('Kr'):
             antStr = antStr + Klist_f[i] + ' = 0.5\n'
@@ -664,18 +660,14 @@ def generateParameterBoundary(glgp):
     pBound = []
     
     for i in range(len(glgp)):
-        if glgp[i].startswith('Km'):
-            pBound.append((1e-3, 10.))
-        elif glgp[i].startswith('h'):
-            pBound.append((1e-1, 4.))
-        elif glgp[i].startswith('Kf'):
-            pBound.append((1e-3, 10.))
+        if glgp[i].startswith('Kf'):
+            pBound.append((1e-2, 10.))
         elif glgp[i].startswith('Kr'):
-            pBound.append((1e-3, 10.))
+            pBound.append((1e-2, 10.))
         elif glgp[i].startswith('Ka'):
-            pBound.append((1e-1, 10.))
+            pBound.append((1e-2, 10.))
         elif glgp[i].startswith('Ki'):
-            pBound.append((1e-1, 10.))
+            pBound.append((1e-2, 10.))
 
     return pBound
     
