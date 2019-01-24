@@ -11,6 +11,7 @@ import numpy as np
 from scipy import signal
 from sklearn import neighbors
 import plotting as pt
+import networkx as nx
 
 
 def getWeights(dist):
@@ -96,6 +97,31 @@ def ensembleTimeCourse(model_col):
         T[i] = r.simulate(0, 100, 100)[:,1:]
     
     return T
+
+
+def isConnected(rl):
+    """
+    Check if a reaction list features connected graph.
+    
+    :param rl: reaction list
+    """
+    
+    G = nx.Graph()
+    
+    for i in range(len(rl)):
+        for j in range(len(rl[i][3])):
+            G.add_edges_from([(rl[i][3][j], str(i))])
+        
+        for k in range(len(rl[i][4])):
+            G.add_edges_from([(str(i), rl[i][4][k])])
+        
+        for l in range(len(rl[i][5])):
+            G.add_edges_from([(rl[i][5][l], str(i))])
+            
+        for m in range(len(rl[i][6])):
+            G.add_edges_from([(rl[i][6][m], str(i))])
+    
+    return nx.is_connected(G)
 
 
 def selectWithCutoff(model_top, dist_top, cutoff=0.1):

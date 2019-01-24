@@ -12,6 +12,31 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sb
 
+
+def plotAllProgress(listOfDistances, labels=None, SAVE_PATH=None):
+    """
+    Plots multiple convergence progress 
+    
+    :param listOfDistances: 2D array of distances
+    :param labels: list of strings to use as labels
+    :param SAVE: flag for saving the output
+    """
+    
+    for i in range(len(listOfDistances)):
+        plt.plot(listOfDistances[i])
+    if labels:
+        plt.legend(labels)
+    plt.xlabel("Generations", fontsize=15)
+    plt.ylabel("Distance", fontsize=15)
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
+    if SAVE_PATH is not None:
+        if os.path.splitext(SAVE_PATH)[1] == '':
+            plt.savefig(os.path.join(SAVE_PATH, 'images/convergence.pdf'), bbox_inches='tight')
+        else:
+            plt.savefig(SAVE_PATH, bbox_inches='tight')
+    plt.show()
+
 def plotProgress(distance, SAVE_PATH=None):
     """
     Plots convergence progress

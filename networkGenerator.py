@@ -32,120 +32,307 @@ import tellurium as te
 import random
 import numpy as np
 import copy
+import analysis
 
-class TReactionType:
+class ReactionType:
     UNIUNI = 0
     BIUNI = 1
     UNIBI = 2
     BIBI = 3
-      
-class TReactionProbabilities:
+
+class RegulationType:
+    DEFAULT = 0
+    INHIBITION = 1
+    ACTIVATION = 2
+    INIHIBITION_ACTIVATION = 3
+    
+class Reversibility:
+    IRREVERSIBLE = 0
+    REVERSIBLE = 1
+
+class RP:
     UniUni = 0.7
     BiUni = 0.125
     UniBi = 0.125
     BiBI  = 0.05
-     
-      
-def pickReactionType():
-    rt = np.random.random()
-    if rt < TReactionProbabilities.UniUni:
-        return TReactionType.UNIUNI
-    elif rt < TReactionProbabilities.UniUni + TReactionProbabilities.BiUni:
-        return TReactionType.BIUNI
-    elif rt < TReactionProbabilities.UniUni + TReactionProbabilities.BiUni + TReactionProbabilities.UniBi:
-        return TReactionType.UNIBI
-    return TReactionType.BIBI
     
+class RLP:
+    Default = 0.83
+    Inhib = 0.08
+    Activ = 0.08
+    Inhibactiv = 0.01
+    
+class REVP:
+    Irreversible = 0.
+    Reversible = 1.
+
+#def pickRateLawType():
+#    rt = np.random.random()
+#    if rt < RateLawProb.default:
+#        return 0
+#    elif rt < RateLawProb.default + RateLawProb.inhib:
+#        return 1
+#    elif rt < RateLawProb.default + RateLawProb.inhib + RateLawProb.activ:
+#        return 2
+#    return 3
+     
+
+def pickReactionType():
+    rt1 = np.random.random()
+    if rt1 < RP.UniUni:
+        rType = ReactionType.UNIUNI
+    elif (rt1 >= RP.UniUni) and (rt1 < RP.UniUni + RP.BiUni):
+        rType = ReactionType.BIUNI
+    elif (rt1 >= RP.UniUni + RP.BiUni) and (rt1 < RP.UniUni + RP.BiUni + RP.UniBi):
+        rType = ReactionType.UNIBI
+    else:
+        rType = ReactionType.BIBI
+    
+    rt2 = np.random.random()
+    if rt2 < RLP.Default:
+        regType = RegulationType.DEFAULT
+    elif (rt2 >= RLP.Default) and (rt2 < RLP.Default + RLP.Inhib):
+        regType = RegulationType.INHIBITION
+    elif (rt2 >= RLP.Default + RLP.Inhib) and (rt2 < RLP.Default + RLP.Inhib + RLP.Activ):
+        regType = RegulationType.ACTIVATION
+    else:
+        regType = RegulationType.INIHIBITION_ACTIVATION
+    
+    rt3 = np.random.random()
+    if rt3 < REVP.Irreversible:
+        revType = Reversibility.IRREVERSIBLE
+    else:
+        revType = Reversibility.REVERSIBLE
+        
+    return rType, regType, revType
 
 # Generates a reaction network in the form of a reaction list
 # reactionList = [nSpecies, reaction, ....]
 # reaction = [reactionType, [list of reactants], [list of product], rateConstant]
-def generateReactionList(nSpecies, nReactions):
+def generateReactionList(nSpecies, nReactions, boundaryIdx):
+#    connected = False
+    
+#    while not connected:
     reactionList = []
     for r in range(nReactions):
-        rct = [col[1] for col in reactionList]
-        prd = [col[2] for col in reactionList]
-        rateConstant = 0.5#np.random.uniform(1e-3, 1.)
-        rt = pickReactionType()
-        if rt == TReactionType.UNIUNI:
+        rct = [col[3] for col in reactionList]
+        prd = [col[4] for col in reactionList]
+        
+        rType, regType, revType = pickReactionType()
+        
+        if rType == ReactionType.UNIUNI:
             # UniUni
             rct_id = np.random.choice(np.arange(nSpecies), size=1)
             prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
-            
-            # Search for potentially identical reactions
             all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
             all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
             
-            while len(set(all_rct) & set(all_prd)) > 0:
+            while (((np.any(np.isin(rct_id, boundaryIdx))) and 
+                   (np.any(np.isin(prd_id, boundaryIdx)))) or 
+                   (len(set(all_rct) & set(all_prd)) > 0)):
                 rct_id = np.random.choice(np.arange(nSpecies), size=1)
                 prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
+                # Search for potentially identical reactions
                 all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
                 all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
+                
+            if regType == RegulationType.DEFAULT:
+                act_id = []
+                inhib_id = []
+            elif regType == RegulationType.INHIBITION:
+                act_id = []
+                inhib_id = np.random.choice(np.delete(np.arange(nSpecies), 
+                             np.unique(np.concatenate([rct_id, prd_id]))), size=1).tolist()
+                if len(inhib_id) == 0:
+                    regType = RegulationType.DEFAULT
+            elif regType == RegulationType.ACTIVATION:
+                act_id = np.random.choice(np.delete(np.arange(nSpecies), 
+                             np.unique(np.concatenate([rct_id, prd_id]))), size=1).tolist()
+                inhib_id = []
+                if len(act_id) == 0:
+                    regType = RegulationType.DEFAULT
+            else:
+                reg_id = np.random.choice(np.delete(np.arange(nSpecies), 
+                             np.unique(np.concatenate([rct_id, prd_id]))), size=2)
+                act_id = [reg_id[0]]
+                inhib_id = [reg_id[1]]
+                if len(reg_id) == 0:
+                    regType = RegulationType.DEFAULT
             
-            reactionList.append ([rt, [rct_id[0]], [prd_id[0]], rateConstant]) 
+#            if ((np.any(np.isin(rct_id, boundaryIdx))) or (np.any(np.isin(prd_id, boundaryIdx)))):
+#                revType = Reversibility.IRREVERSIBLE
+            
+            reactionList.append([rType, 
+                                 regType, 
+                                 revType, 
+                                 [rct_id[0]], 
+                                 [prd_id[0]], 
+                                 act_id, 
+                                 inhib_id])
 
-        elif rt == TReactionType.BIUNI:
+        elif rType == ReactionType.BIUNI:
             # BiUni
             rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
-            # pick a product but only products that don't include the reactants
             prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
-            
-             # Search for potentially identical reactions
             all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                               rct_id[1]] or x == [rct_id[1], rct_id[0]]]
+                                                   rct_id[1]] or x == [rct_id[1], rct_id[0]]]
             all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
             
-            while len(set(all_rct) & set(all_prd)) > 0:
+            while (((np.any(np.isin(rct_id, boundaryIdx))) and 
+                   (np.any(np.isin(prd_id, boundaryIdx)))) or 
+                   (len(set(all_rct) & set(all_prd)) > 0)):
                 rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
+                # pick a product but only products that don't include the reactants
                 prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
+                
+                # Search for potentially identical reactions
                 all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                               rct_id[1]] or x == [rct_id[1], rct_id[0]]]
+                                                   rct_id[1]] or x == [rct_id[1], rct_id[0]]]
                 all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
+                
+            if regType == RegulationType.DEFAULT:
+                act_id = []
+                inhib_id = []
+            elif regType == RegulationType.INHIBITION:
+                act_id = []
+                inhib_id = np.random.choice(np.delete(np.arange(nSpecies), 
+                             np.unique(np.concatenate([rct_id, prd_id]))), size=1).tolist()
+                if len(inhib_id) == 0:
+                    regType = RegulationType.DEFAULT
+            elif regType == RegulationType.ACTIVATION:
+                act_id = np.random.choice(np.delete(np.arange(nSpecies), 
+                             np.unique(np.concatenate([rct_id, prd_id]))), size=1).tolist()
+                inhib_id = []
+                if len(act_id) == 0:
+                    regType = RegulationType.DEFAULT
+            else:
+                reg_id = np.random.choice(np.delete(np.arange(nSpecies), 
+                             np.unique(np.concatenate([rct_id, prd_id]))), size=2)
+                act_id = [reg_id[0]]
+                inhib_id = [reg_id[1]]
+                if len(reg_id) == 0:
+                    regType = RegulationType.DEFAULT
             
-            reactionList.append ([rt, [rct_id[0], rct_id[1]], [prd_id[0]], rateConstant]) 
+#            if np.any(np.isin(prd_id, boundaryIdx)):
+#                revType = Reversibility.IRREVERSIBLE
+            
+            reactionList.append([rType, 
+                                 regType, 
+                                 revType, 
+                                 [rct_id[0], rct_id[1]], 
+                                 [prd_id[0]], 
+                                 act_id, 
+                                 inhib_id]) 
         
-        elif rt == TReactionType.UNIBI:
+        elif rType == ReactionType.UNIBI:
             # UniBi
             rct_id = np.random.choice(np.arange(nSpecies), size=1)
-            # pick a product but only products that don't include the reactant
             prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
-            
-            # Search for potentially identical reactions
             all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
             all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                               prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+                                                   prd_id[1]] or x == [prd_id[1], prd_id[0]]]
             
-            while len(set(all_rct) & set(all_prd)) > 0:
+            while (((np.any(np.isin(rct_id, boundaryIdx))) and 
+                   (np.any(np.isin(prd_id, boundaryIdx)))) or 
+                   (len(set(all_rct) & set(all_prd)) > 0)):
                 rct_id = np.random.choice(np.arange(nSpecies), size=1)
+                # pick a product but only products that don't include the reactant
                 prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
+                
+                # Search for potentially identical reactions
                 all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
                 all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                               prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+                                                   prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+                
+            if regType == RegulationType.DEFAULT:
+                act_id = []
+                inhib_id = []
+            elif regType == RegulationType.INHIBITION:
+                act_id = []
+                inhib_id = np.random.choice(np.delete(np.arange(nSpecies), 
+                             np.unique(np.concatenate([rct_id, prd_id]))), size=1).tolist()
+                if len(inhib_id) == 0:
+                    regType = RegulationType.DEFAULT
+            elif regType == RegulationType.ACTIVATION:
+                act_id = np.random.choice(np.delete(np.arange(nSpecies), 
+                             np.unique(np.concatenate([rct_id, prd_id]))), size=1).tolist()
+                inhib_id = []
+                if len(act_id) == 0:
+                    regType = RegulationType.DEFAULT
+            else:
+                reg_id = np.random.choice(np.delete(np.arange(nSpecies), 
+                             np.unique(np.concatenate([rct_id, prd_id]))), size=2)
+                act_id = [reg_id[0]]
+                inhib_id = [reg_id[1]]
+                if len(reg_id) == 0:
+                    regType = RegulationType.DEFAULT
             
-            reactionList.append ([rt, [rct_id[0]], [prd_id[0], prd_id[1]], rateConstant]) 
+#            if np.any(np.isin(rct_id, boundaryIdx)):
+#                revType = Reversibility.IRREVERSIBLE
+            
+            reactionList.append ([rType, 
+                                  regType, 
+                                  revType,
+                                  [rct_id[0]], 
+                                  [prd_id[0], prd_id[1]], 
+                                  act_id, 
+                                  inhib_id]) 
         
         else:
             # BiBi
             rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
-            # pick a product but only products that don't include the reactant
             prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
-            
-            # Search for potentially identical reactions
             all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                               rct_id[1]] or x == [rct_id[1], rct_id[0]]]
+                                                   rct_id[1]] or x == [rct_id[1], rct_id[0]]]
             all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                               prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+                                                   prd_id[1]] or x == [prd_id[1], prd_id[0]]]
             
-            while len(set(all_rct) & set(all_prd)) > 0:
+            while (((np.any(np.isin(rct_id, boundaryIdx))) and 
+                   (np.any(np.isin(prd_id, boundaryIdx)))) or
+                   (len(set(all_rct) & set(all_prd)) > 0)):
                 rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
+                # pick a product but only products that don't include the reactant
                 prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
+                
+                # Search for potentially identical reactions
                 all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                               rct_id[1]] or x == [rct_id[1], rct_id[0]]]
+                                                   rct_id[1]] or x == [rct_id[1], rct_id[0]]]
                 all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                               prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+                                                   prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+                
+            if regType == RegulationType.DEFAULT:
+                act_id = []
+                inhib_id = []
+            elif regType == RegulationType.INHIBITION:
+                act_id = []
+                inhib_id = np.random.choice(np.delete(np.arange(nSpecies), 
+                             np.unique(np.concatenate([rct_id, prd_id]))), size=1).tolist()
+                if len(inhib_id) == 0:
+                    regType = RegulationType.DEFAULT
+            elif regType == RegulationType.ACTIVATION:
+                act_id = np.random.choice(np.delete(np.arange(nSpecies), 
+                             np.unique(np.concatenate([rct_id, prd_id]))), size=1).tolist()
+                inhib_id = []
+                if len(act_id) == 0:
+                    regType = RegulationType.DEFAULT
+            else:
+                reg_id = np.random.choice(np.delete(np.arange(nSpecies), 
+                             np.unique(np.concatenate([rct_id, prd_id]))), size=2)
+                act_id = [reg_id[0]]
+                inhib_id = [reg_id[1]]
+                if len(reg_id) == 0:
+                    regType = RegulationType.DEFAULT
             
-            reactionList.append ([rt, [rct_id[0], rct_id[1]], [prd_id[0], prd_id[1]], rateConstant])
-
+            reactionList.append ([rType, 
+                                  regType, 
+                                  revType, 
+                                  [rct_id[0], rct_id[1]], 
+                                  [prd_id[0], prd_id[1]], 
+                                  act_id, 
+                                  inhib_id])
+            
+#        connected = analysis.isConnected(reactionList)
+        
     return reactionList
     
 
@@ -157,40 +344,40 @@ def getFullStoichiometryMatrix(reactionList, ns):
     st = np.zeros((ns, len(reactionListCopy)))
     
     for index, rind in enumerate(reactionListCopy):
-        if rind[0] == TReactionType.UNIUNI:
+        if rind[0] == ReactionType.UNIUNI:
             # UniUni
-            reactant = reactionListCopy[index][1][0]
+            reactant = reactionListCopy[index][3][0]
             st[reactant, index] = st[reactant, index] - 1
-            product = reactionListCopy[index][2][0]
+            product = reactionListCopy[index][4][0]
             st[product, index] = st[product, index] + 1
      
-        elif rind[0] == TReactionType.BIUNI:
+        elif rind[0] == ReactionType.BIUNI:
             # BiUni
-            reactant1 = reactionListCopy[index][1][0]
+            reactant1 = reactionListCopy[index][3][0]
             st[reactant1, index] = st[reactant1, index] - 1
-            reactant2 = reactionListCopy[index][1][1]
+            reactant2 = reactionListCopy[index][3][1]
             st[reactant2, index] = st[reactant2, index] - 1
-            product = reactionListCopy[index][2][0]
+            product = reactionListCopy[index][4][0]
             st[product, index] = st[product, index] + 1
 
-        elif rind[0] == TReactionType.UNIBI:
+        elif rind[0] == ReactionType.UNIBI:
             # UniBi
-            reactant1 = reactionListCopy[index][1][0]
+            reactant1 = reactionListCopy[index][3][0]
             st[reactant1, index] = st[reactant1, index] - 1
-            product1 = reactionListCopy[index][2][0]
+            product1 = reactionListCopy[index][4][0]
             st[product1, index] = st[product1, index] + 1
-            product2 = reactionListCopy[index][2][1]
+            product2 = reactionListCopy[index][4][1]
             st[product2, index] = st[product2, index] + 1
 
         else:
             # BiBi
-            reactant1 = reactionListCopy[index][1][0]
+            reactant1 = reactionListCopy[index][3][0]
             st[reactant1, index] = st[reactant1, index] - 1
-            reactant2 = reactionListCopy[index][1][1]
+            reactant2 = reactionListCopy[index][3][1]
             st[reactant2, index] = st[reactant2, index] - 1
-            product1 = reactionListCopy[index][2][0]
+            product1 = reactionListCopy[index][4][0]
             st[product1, index] = st[product1, index] + 1
-            product2 = reactionListCopy[index][2][1]
+            product2 = reactionListCopy[index][4][1]
             st[product2, index] = st[product2, index] + 1
 
     return st
@@ -235,12 +422,139 @@ def removeBoundaryNodes(st):
     return [np.delete(st, indexes + orphanSpecies, axis=0), floatingIds, boundaryIds]
 
 
-def generateRateLaw(rt, rl):
-    pass
+def generateRateLaw(rl, floatingIds, boundaryIds, rlt, Jind):
+    
+    Klist = []
+    
+    T = ''
+    D = ''
+    Rreg = ''
+    Dreg = ''
+    
+    # T
+    T = T + '(Kf_' + str(Jind) + '*'
+    Klist.append('Kf_' + str(Jind))
+    Klist.append('h_' + str(Jind))
+    
+    T = T + '('
+    for i in range(len(rl[Jind][1])):
+        T = T + '(S' + str(rl[Jind][1][i]) + '/Km_' + str(rl[Jind][1][i]) + ')^h_' + str(Jind)
+        Klist.append('Km_' + str(rl[Jind][1][i]))
+        if i < len(rl[Jind][1]) - 1:
+            T = T + '*'
+    T = T + ')'
+    
+    T = T + '-Kr_' + str(Jind) + '*'
+    Klist.append('Kr_' + str(Jind))
+    
+    T = T + '('
+    for i in range(len(rl[Jind][2])):
+        T = T + '(S' + str(rl[Jind][2][i]) + '/Km_' + str(rl[Jind][2][i]) +')^h_' + str(Jind)
+        Klist.append('Km_' + str(rl[Jind][2][i]))
+        if i < len(rl[Jind][2]) - 1:
+            T = T + '*'
+            
+    T = T + '))'
+        
+    # D
+    D = D + '('
+    
+    for i in range(len(rl[Jind][1])):
+        D = D + '((1 + (S' + str(rl[Jind][1][i]) + '/Km_' + str(rl[Jind][1][i]) + '))^h_' + str(Jind) + ')'
+        Klist.append('Km_' + str(rl[Jind][1][i]))
+        if i < len(rl[Jind][1]) - 1:
+            D = D + '*'
+    
+    D = D + '+'
+    
+    for i in range(len(rl[Jind][2])):
+        D = D + '((1 + (S' + str(rl[Jind][2][i]) + '/Km_' + str(rl[Jind][2][i]) + '))^h_' + str(Jind) + ')'
+        Klist.append('Km_' + str(rl[Jind][2][i]))
+        if i < len(rl[Jind][2]) - 1:
+            D = D + '*'
+    
+    D = D + '-1)'
+        
+    #Rreg
+    if (rlt == 1) or (rlt == 3):
+        pass
+    
+    #Dreg
+    if (rlt == 2) or (rlt == 3):
+        pass
+    
+    
+    rateLaw = Rreg + T + '/(' + D +  Dreg + ')'
+        
+    return rateLaw, Klist
+
+
+def generateSimpleRateLaw(rl, floatingIds, boundaryIds, Jind):
+    
+    Klist = []
+    
+    T = ''
+    D = ''
+    ACT = ''
+    INH = ''
+    
+    # T
+    T = T + '(Kf' + str(Jind) + '*'
+    Klist.append('Kf' + str(Jind))
+    
+    for i in range(len(rl[Jind][3])):
+        T = T + 'S' + str(rl[Jind][3][i])
+        if i < len(rl[Jind][3]) - 1:
+            T = T + '*'
+    
+    if rl[Jind][2] == Reversibility.REVERSIBLE:
+        T = T + ' - Kr' + str(Jind) + '*'
+        Klist.append('Kr' + str(Jind))
+        
+        for i in range(len(rl[Jind][4])):
+            T = T + 'S' + str(rl[Jind][4][i])
+            if i < len(rl[Jind][4]) - 1:
+                T = T + '*'
+            
+    T = T + ')'
+        
+    # D
+    D = D + '1 + '
+    
+    for i in range(len(rl[Jind][3])):
+        D = D + 'S' + str(rl[Jind][3][i])
+        if i < len(rl[Jind][3]) - 1:
+            D = D + '*'
+    
+    if rl[Jind][2] == Reversibility.REVERSIBLE:
+        D = D + ' + '
+        for i in range(len(rl[Jind][4])):
+            D = D + 'S' + str(rl[Jind][4][i])
+            if i < len(rl[Jind][4]) - 1:
+                D = D + '*'
+    
+    # Activation
+    if (len(rl[Jind][5]) > 0):
+        for i in range(len(rl[Jind][5])):
+            ACT = ACT + '(1 + Ka' + str(Jind) + str(i) + '*'
+            Klist.append('Ka' + str(Jind) + str(i))
+            ACT = ACT + 'S' + str(rl[Jind][5][i]) + ')*'
+            
+    # Inhibition
+    if (len(rl[Jind][6]) > 0):
+        for i in range(len(rl[Jind][6])):
+            INH = INH + '(1/(1 + Ki' + str(Jind) + str(i) + '*'
+            Klist.append('Ki' + str(Jind) + str(i))
+            INH = INH + 'S' + str(rl[Jind][6][i]) + '))*'
+    
+    rateLaw = ACT + INH + T + '/(' + D + ')'
+        
+    return rateLaw, Klist
 
 
 def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundary_init=None):
     reactionListCopy = copy.deepcopy(reactionList)
+    Klist = []
     
     real = np.append(floatingIds, boundaryIds)
     if type(real[0]) == 'str' or type(real[0]) == np.str_:
@@ -265,44 +579,65 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
 
     # List reactions
     for index, rind in enumerate(reactionListCopy):
-        if rind[0] == TReactionType.UNIUNI:
+        if rind[0] == ReactionType.UNIUNI:
             # UniUni
-            antStr = antStr + 'J' + str(index) + ': S' + str(real[tar.index(reactionListCopy[index][1][0])])
+            antStr = antStr + 'J' + str(index) + ': S' + str(real[tar.index(reactionListCopy[index][3][0])])
             antStr = antStr + ' -> '
-            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][0])])
-            antStr = antStr + '; k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])])
-        elif rind[0] == TReactionType.BIUNI:
+            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][4][0])])
+            antStr = antStr + '; '#k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])])
+            RateLaw, klist_i = generateSimpleRateLaw(reactionList, floatingIds, boundaryIds, index)
+            antStr = antStr + RateLaw
+            Klist.append(klist_i)
+        elif rind[0] == ReactionType.BIUNI:
             # BiUni
-            antStr = antStr + 'J' + str(index) + ': S' + str(real[tar.index(reactionListCopy[index][1][0])])
+            antStr = antStr + 'J' + str(index) + ': S' + str(real[tar.index(reactionListCopy[index][3][0])])
             antStr = antStr + ' + '
-            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][1][1])])
+            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][3][1])])
             antStr = antStr + ' -> '
-            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][0])])
-            antStr = antStr + '; k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])]) + '*S' + str(real[tar.index(reactionListCopy[index][1][1])])
-        elif rind[0] == TReactionType.UNIBI:
+            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][4][0])])
+            antStr = antStr + '; '#k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])]) + '*S' + str(real[tar.index(reactionListCopy[index][1][1])])
+            RateLaw, klist_i = generateSimpleRateLaw(reactionList, floatingIds, boundaryIds, index)
+            antStr = antStr + RateLaw
+            Klist.append(klist_i)
+        elif rind[0] == ReactionType.UNIBI:
             # UniBi
-            antStr = antStr + 'J' + str(index) + ': S' + str(real[tar.index(reactionListCopy[index][1][0])])
+            antStr = antStr + 'J' + str(index) + ': S' + str(real[tar.index(reactionListCopy[index][3][0])])
             antStr = antStr + ' -> '
-            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][0])])
+            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][4][0])])
             antStr = antStr + ' + '
-            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][1])])
-            antStr = antStr + '; k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])])
+            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][4][1])])
+            antStr = antStr + '; '#k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])])
+            RateLaw, klist_i = generateSimpleRateLaw(reactionList, floatingIds, boundaryIds, index)
+            antStr = antStr + RateLaw
+            Klist.append(klist_i)
         else:
             # BiBi
-            antStr = antStr + 'J' + str(index) + ': S' + str(real[tar.index(reactionListCopy[index][1][0])])
+            antStr = antStr + 'J' + str(index) + ': S' + str(real[tar.index(reactionListCopy[index][3][0])])
             antStr = antStr + ' + '
-            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][1][1])])
+            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][3][1])])
             antStr = antStr + ' -> '
-            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][0])])
+            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][4][0])])
             antStr = antStr + ' + '
-            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][2][1])])
-            antStr = antStr + '; k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])]) + '*S' + str(real[tar.index(reactionListCopy[index][1][1])])
+            antStr = antStr + 'S' + str(real[tar.index(reactionListCopy[index][4][1])])
+            antStr = antStr + '; '#k' + str(index) + '*S' + str(real[tar.index(reactionListCopy[index][1][0])]) + '*S' + str(real[tar.index(reactionListCopy[index][1][1])])
+            RateLaw, klist_i = generateSimpleRateLaw(reactionList, floatingIds, boundaryIds, index)
+            antStr = antStr + RateLaw
+            Klist.append(klist_i)
         antStr = antStr + ';\n'
 
     # List rate constants
     antStr = antStr + '\n'
-    for index, rind in enumerate(reactionListCopy):
-        antStr = antStr + 'k' + str(index) + ' = ' + str(rind[3]) + '\n'
+    Klist_f = [item for sublist in Klist for item in sublist]
+#    Klist_f = np.unique(Klist_f)
+    for i in range(len(Klist_f)):
+        if Klist_f[i].startswith('Kf'):
+            antStr = antStr + Klist_f[i] + ' = 1\n'
+        elif Klist_f[i].startswith('Kr'):
+            antStr = antStr + Klist_f[i] + ' = 0.5\n'
+        elif Klist_f[i].startswith('Ka'):
+            antStr = antStr + Klist_f[i] + ' = 1\n'
+        elif Klist_f[i].startswith('Ki'):
+            antStr = antStr + Klist_f[i] + ' = 1\n'
         
     # Initialize boundary species
     antStr = antStr + '\n'
@@ -319,6 +654,23 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
         
     return antStr
      
+
+def generateParameterBoundary(glgp):
+    
+    pBound = []
+    
+    for i in range(len(glgp)):
+        if glgp[i].startswith('Kf'):
+            pBound.append((1e-2, 10.))
+        elif glgp[i].startswith('Kr'):
+            pBound.append((1e-2, 10.))
+        elif glgp[i].startswith('Ka'):
+            pBound.append((1e-2, 10.))
+        elif glgp[i].startswith('Ki'):
+            pBound.append((1e-2, 10.))
+
+    return pBound
+    
 
 def generateLinearChainAnt(ns):
     order = np.random.sample(range(ns), ns)
