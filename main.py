@@ -36,13 +36,16 @@ def f1(k_list, *args):
     try:
         args[0].steadyState()
         objCC = args[0].getScaledConcentrationControlCoefficientMatrix()
+        objCC[np.abs(objCC) < 1e-16] = 0 # Set small values to zero
+        
 #        testCount = np.array(np.unravel_index(np.argsort(objCC, axis=None), objCC.shape)).T
-        dist_obj = (1/(1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(objCC))))) + 
-                    (np.linalg.norm(realConcCC - objCC)))
+        dist_obj = w1*((np.linalg.norm(realConcCC - objCC))/
+                    (1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(objCC))))))
+                    
 #        + np.sum(args[0].getReactionRates() < 0))
 #                    + 1/(1 + np.sum((testCount == realCount).all(axis=1))))
-        
 #        dist_obj = (np.linalg.norm(realConcCC - objCC))
+        
     except:
         countf += 1
         dist_obj = 10000
@@ -337,6 +340,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                     
                     r.steadyState()
                     SS_i = r.getFloatingSpeciesConcentrations()
+                    
                     # Buggy model
 #                    if np.any(SS_i > 1e5):
 #                        r.reset()
@@ -344,12 +348,14 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
 #                        ss.presimulation_time = 100
 #                        r.steadyState()
 #                        SS_i = r.getFloatingSpeciesConcentrations()
+                    
                     if np.any(SS_i < 1e-5) or np.any(SS_i > 1e5):
                         eval_dist[m] = listdist[m]
                         eval_model[m] = listantStr[m]
                         eval_rl[m] = listrl[m]
                     else:
                         concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
+                        concCC_i[np.abs(concCC_i) < 1e-16] = 0 # Set small values to zero
                         
                         if np.isnan(concCC_i).any():
                             eval_dist[m] = listdist[m]
@@ -362,8 +368,8 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                             concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                             
 #                            count_i = np.array(np.unravel_index(np.argsort(concCC_i, axis=None), concCC_i.shape)).T
-                            dist_i = (1/(1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(concCC_i))))) + 
-                                        (np.linalg.norm(realConcCC - concCC_i)))
+                            dist_i = w1*((np.linalg.norm(realConcCC - concCC_i))/
+                                      (1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(concCC_i))))))
 #                            + np.sum(r.getReactionRates() < 0))
 #                                        + 1/(1 + np.sum((count_i == realCount).all(axis=1))))
                             
@@ -440,6 +446,7 @@ def initialize():
                     
                 r.steadyState()
                 SS_i = r.getFloatingSpeciesConcentrations()
+                
                 # Buggy model
 #                if np.any(SS_i > 1e5):
 #                    r.reset()
@@ -452,6 +459,7 @@ def initialize():
                     numBadModels += 1
                 else:
                     concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
+                    concCC_i[np.abs(concCC_i) < 1e-16] = 0 # Set small values to zero
                     
                     if np.isnan(concCC_i).any():
                         numBadModels += 1
@@ -462,8 +470,8 @@ def initialize():
                         concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                         
 #                        count_i = np.array(np.unravel_index(np.argsort(concCC_i, axis=None), concCC_i.shape)).T
-                        dist_i = (1/(1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(concCC_i))))) + 
-                                    (np.linalg.norm(realConcCC - concCC_i)))
+                        dist_i = w1*((np.linalg.norm(realConcCC - concCC_i))/
+                                      (1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(concCC_i))))))
 #                        + np.sum(r.getReactionRates() < 0))
 #                                    + 1/(1 + np.sum((count_i == realCount).all(axis=1))))
                         
@@ -476,7 +484,6 @@ def initialize():
                         rl_track.append(rl)
                         
                         numGoodModels = numGoodModels + 1
-                        print(numGoodModels)
         except:
             numBadModels = numBadModels + 1
         antimony.clearPreviousLoads()
@@ -550,6 +557,7 @@ def random_gen(listAntStr, listDist, listrl):
                     
                     r.steadyState()
                     SS_i = r.getFloatingSpeciesConcentrations()
+                    
                     # Buggy model
 #                    if np.any(SS_i > 1e5):
 #                        r.reset()
@@ -557,12 +565,14 @@ def random_gen(listAntStr, listDist, listrl):
 #                        ss.presimulation_time = 100
 #                        r.steadyState()
 #                        SS_i = r.getFloatingSpeciesConcentrations()
+                    
                     if np.any(SS_i < 1e-5) or np.any(SS_i > 1e5):
                         rnd_dist[l] = listDist[l]
                         rnd_model[l] = listAntStr[l]
                         rnd_rl[l] = listrl[l]
                     else:
                         concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
+                        concCC_i[np.abs(concCC_i) < 1e-16] = 0 # Set small values to zero
                         
                         if np.isnan(concCC_i).any():
                             rnd_dist[l] = listDist[l]
@@ -575,8 +585,8 @@ def random_gen(listAntStr, listDist, listrl):
                             concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                             
 #                            count_i = np.array(np.unravel_index(np.argsort(concCC_i, axis=None), concCC_i.shape)).T
-                            dist_i = (1/(1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(concCC_i))))) + 
-                                        (np.linalg.norm(realConcCC - concCC_i)))
+                            dist_i = w1*((np.linalg.norm(realConcCC - concCC_i))/
+                                      (1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(concCC_i))))))
 #                            + np.sum(r.getReactionRates() < 0))
 #                                        + 1/(1 + np.sum((count_i == realCount).all(axis=1))))
                             
@@ -626,7 +636,7 @@ if __name__ == '__main__':
     optiMaxIter = 100 # Maximum iteration allowed for optimizer
     optiTol = 1.
     optiPolish = False
-    w1 = 1.0 # Weight for control coefficients when calculating the distance
+    w1 = 16 # Weight for control coefficients when calculating the distance
     w2 = 1.0 # Weight for steady-state and flux when calculating the distance
     
     # Random settings
@@ -643,7 +653,7 @@ if __name__ == '__main__':
     # Data settings
     EXPORT_OUTPUT = True # Flag for saving collected models
     EXPORT_SETTINGS = False # Flag for saving current settings
-    EXPORT_PATH = './output_ffl_r' # Path to save the output
+    EXPORT_PATH = './output_ffl_rev_opti_fixed_div' # Path to save the output
     
     # Flag to run algorithm
     RUN = True
