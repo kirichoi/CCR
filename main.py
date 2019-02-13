@@ -355,17 +355,18 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                         eval_rl[m] = listrl[m]
                     else:
                         concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
-                        concCC_i[np.abs(concCC_i) < 1e-16] = 0 # Set small values to zero
                         
                         if np.isnan(concCC_i).any():
                             eval_dist[m] = listdist[m]
                             eval_model[m] = listantStr[m]
                             eval_rl[m] = listrl[m]
                         else:
-                            concCC_i_row = concCC_i.rownames
-                            concCC_i_col = concCC_i.colnames
-                            concCC_i = concCC_i[np.argsort(concCC_i_row)]
-                            concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
+                            concCC_i[np.abs(concCC_i) < 1e-16] = 0 # Set small values to zero
+                            
+#                            concCC_i_row = concCC_i.rownames
+#                            concCC_i_col = concCC_i.colnames
+#                            concCC_i = concCC_i[np.argsort(concCC_i_row)]
+#                            concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                             
 #                            count_i = np.array(np.unravel_index(np.argsort(concCC_i, axis=None), concCC_i.shape)).T
                             dist_i = w1*((np.linalg.norm(realConcCC - concCC_i))/
@@ -459,15 +460,16 @@ def initialize():
                     numBadModels += 1
                 else:
                     concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
-                    concCC_i[np.abs(concCC_i) < 1e-16] = 0 # Set small values to zero
                     
                     if np.isnan(concCC_i).any():
                         numBadModels += 1
                     else:
-                        concCC_i_row = concCC_i.rownames
-                        concCC_i_col = concCC_i.colnames
-                        concCC_i = concCC_i[np.argsort(concCC_i_row)]
-                        concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
+                        concCC_i[np.abs(concCC_i) < 1e-16] = 0 # Set small values to zero
+                        
+#                        concCC_i_row = concCC_i.rownames
+#                        concCC_i_col = concCC_i.colnames
+#                        concCC_i = concCC_i[np.argsort(concCC_i_row)]
+#                        concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                         
 #                        count_i = np.array(np.unravel_index(np.argsort(concCC_i, axis=None), concCC_i.shape)).T
                         dist_i = w1*((np.linalg.norm(realConcCC - concCC_i))/
@@ -572,17 +574,18 @@ def random_gen(listAntStr, listDist, listrl):
                         rnd_rl[l] = listrl[l]
                     else:
                         concCC_i = r.getScaledConcentrationControlCoefficientMatrix()
-                        concCC_i[np.abs(concCC_i) < 1e-16] = 0 # Set small values to zero
                         
                         if np.isnan(concCC_i).any():
                             rnd_dist[l] = listDist[l]
                             rnd_model[l] = listAntStr[l]
                             rnd_rl[l] = listrl[l]
                         else:
-                            concCC_i_row = concCC_i.rownames
-                            concCC_i_col = concCC_i.colnames
-                            concCC_i = concCC_i[np.argsort(concCC_i_row)]
-                            concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
+                            concCC_i[np.abs(concCC_i) < 1e-16] = 0 # Set small values to zero
+                            
+#                            concCC_i_row = concCC_i.rownames
+#                            concCC_i_col = concCC_i.colnames
+#                            concCC_i = concCC_i[np.argsort(concCC_i_row)]
+#                            concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                             
 #                            count_i = np.array(np.unravel_index(np.argsort(concCC_i, axis=None), concCC_i.shape)).T
                             dist_i = w1*((np.linalg.norm(realConcCC - concCC_i))/
@@ -625,7 +628,7 @@ if __name__ == '__main__':
     modelType = 'FFL_r' # 'FFL', 'Linear', 'Nested', 'Branched'
     
     # General settings
-    n_gen = 100 # Number of generations
+    n_gen = 300 # Number of generations
     ens_size = 100 # Size of output ensemble
     pass_size = int(ens_size/10) # Number of models passed on the next generation without mutation
     mut_size = int(ens_size/2) # Number of models to mutate
@@ -922,7 +925,7 @@ if __name__ == '__main__':
             
             if EXPORT_OUTPUT:
                 ioutils.exportOutputs(model_col, dist_col, best_dist, avg_dist, 
-                                      settings, t2-t1, ens_rl, path=EXPORT_PATH)
+                                      settings, t2-t1, rl_track, path=EXPORT_PATH)
 
         
 
