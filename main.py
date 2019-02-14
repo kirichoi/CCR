@@ -363,10 +363,10 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                         else:
                             concCC_i[np.abs(concCC_i) < 1e-16] = 0 # Set small values to zero
                             
-#                            concCC_i_row = concCC_i.rownames
-#                            concCC_i_col = concCC_i.colnames
-#                            concCC_i = concCC_i[np.argsort(concCC_i_row)]
-#                            concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
+                            concCC_i_row = concCC_i.rownames
+                            concCC_i_col = concCC_i.colnames
+                            concCC_i = concCC_i[np.argsort(concCC_i_row)]
+                            concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                             
 #                            count_i = np.array(np.unravel_index(np.argsort(concCC_i, axis=None), concCC_i.shape)).T
                             dist_i = w1*((np.linalg.norm(realConcCC - concCC_i))/
@@ -466,10 +466,10 @@ def initialize():
                     else:
                         concCC_i[np.abs(concCC_i) < 1e-16] = 0 # Set small values to zero
                         
-#                        concCC_i_row = concCC_i.rownames
-#                        concCC_i_col = concCC_i.colnames
-#                        concCC_i = concCC_i[np.argsort(concCC_i_row)]
-#                        concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
+                        concCC_i_row = concCC_i.rownames
+                        concCC_i_col = concCC_i.colnames
+                        concCC_i = concCC_i[np.argsort(concCC_i_row)]
+                        concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                         
 #                        count_i = np.array(np.unravel_index(np.argsort(concCC_i, axis=None), concCC_i.shape)).T
                         dist_i = w1*((np.linalg.norm(realConcCC - concCC_i))/
@@ -582,10 +582,10 @@ def random_gen(listAntStr, listDist, listrl):
                         else:
                             concCC_i[np.abs(concCC_i) < 1e-16] = 0 # Set small values to zero
                             
-#                            concCC_i_row = concCC_i.rownames
-#                            concCC_i_col = concCC_i.colnames
-#                            concCC_i = concCC_i[np.argsort(concCC_i_row)]
-#                            concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
+                            concCC_i_row = concCC_i.rownames
+                            concCC_i_col = concCC_i.colnames
+                            concCC_i = concCC_i[np.argsort(concCC_i_row)]
+                            concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                             
 #                            count_i = np.array(np.unravel_index(np.argsort(concCC_i, axis=None), concCC_i.shape)).T
                             dist_i = w1*((np.linalg.norm(realConcCC - concCC_i))/
