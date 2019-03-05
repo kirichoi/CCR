@@ -841,6 +841,8 @@ if __name__ == '__main__':
         #%%
         # Collect models
         minInd, log_dens = analysis.selectWithKernalDensity(model_top, dist_top)
+        if len(minInd[0]) == 0:
+            minInd = np.array([[len(model_top) - 1]])
         model_col = model_top[:minInd[0][0]]
         dist_col = dist_top[:minInd[0][0]]
             
