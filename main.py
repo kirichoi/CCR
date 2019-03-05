@@ -29,12 +29,8 @@ def f1(k_list, *args):
     
     args[0].setValues(args[0].getGlobalParameterIds(), k_list)
     
-#    ss =  args[0].steadyStateSolver
-#    ss.allow_approx = True
-#    ss.allow_presimulation = True
-    
     try:
-        args[0].steadyState()
+        args[0].steadyStateApproximate()
         objCC = args[0].getScaledConcentrationControlCoefficientMatrix()
         objCC[np.abs(objCC) < 1e-16] = 0 # Set small values to zero
         
@@ -75,7 +71,11 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
         module = antimony.getModuleNames()[-1]
         
         r = te.loada(listantStr[m])
-        r.steadyState()
+        
+        ss = r.steadyStateSolver
+        ss.approx_maximum_steps = 5
+
+        r.steadyStateApproximate()
         
         tempdiff = np.max(np.abs(realConcCC - 
                 r.getScaledConcentrationControlCoefficientMatrix()), axis=0)
@@ -320,10 +320,10 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                 counts = 0
                 countf = 0
                 
-#                ss = r.steadyStateSolver
-#                ss.allow_approx = True
-#                ss.allow_presimulation = True
-                r.steadyState()
+                ss = r.steadyStateSolver
+                ss.approx_maximum_steps = 5
+
+                r.steadyStateApproximate()
                 
                 p_bound = ng.generateParameterBoundary(r.getGlobalParameterIds())
                 res = scipy.optimize.differential_evolution(f1, args=(r,), 
@@ -338,16 +338,11 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                     r = te.loada(antStr)
                     r.setValues(r.getGlobalParameterIds(), res.x)
                     
-                    r.steadyState()
+                    ss = r.steadyStateSolver
+                    ss.approx_maximum_steps = 5
+
+                    r.steadyStateApproximate()
                     SS_i = r.getFloatingSpeciesConcentrations()
-                    
-                    # Buggy model
-#                    if np.any(SS_i > 1e5):
-#                        r.reset()
-#                        ss.allow_presimulation = True
-#                        ss.presimulation_time = 100
-#                        r.steadyState()
-#                        SS_i = r.getFloatingSpeciesConcentrations()
                     
                     if np.any(SS_i < 1e-5) or np.any(SS_i > 1e5):
                         eval_dist[m] = listdist[m]
@@ -427,11 +422,11 @@ def initialize():
             counts = 0
             countf = 0
             
-#            ss = r.steadyStateSolver
-#            ss.allow_approx = True
-#            ss.allow_presimulation = True
-            r.steadyState()
-            
+            ss = r.steadyStateSolver
+            ss.approx_maximum_steps = 5
+
+            r.steadyStateApproximate()
+                
             p_bound = ng.generateParameterBoundary(r.getGlobalParameterIds())
             res = scipy.optimize.differential_evolution(f1, args=(r,), 
                                bounds=p_bound, maxiter=optiMaxIter, tol=optiTol,
@@ -445,17 +440,12 @@ def initialize():
                 r = te.loada(antStr)
                 r.setValues(r.getGlobalParameterIds(), res.x)
                     
-                r.steadyState()
+                ss = r.steadyStateSolver
+                ss.approx_maximum_steps = 5
+
+                r.steadyStateApproximate()
                 SS_i = r.getFloatingSpeciesConcentrations()
                 
-                # Buggy model
-#                if np.any(SS_i > 1e5):
-#                    r.reset()
-#                    ss.allow_presimulation = True
-#                    ss.presimulation_time = 100
-#                    r.steadyState()
-#                    SS_i = r.getFloatingSpeciesConcentrations()
-                        
                 if np.any(SS_i < 1e-5) or np.any(SS_i > 1e5):
                     numBadModels += 1
                 else:
@@ -538,10 +528,10 @@ def random_gen(listAntStr, listDist, listrl):
                 counts = 0
                 countf = 0
                 
-#                ss = r.steadyStateSolver
-#                ss.allow_approx = True
-#                ss.allow_presimulation = True
-                r.steadyState()
+                ss = r.steadyStateSolver
+                ss.approx_maximum_steps = 5
+
+                r.steadyStateApproximate()
                 
                 p_bound = ng.generateParameterBoundary(r.getGlobalParameterIds())
                 res = scipy.optimize.differential_evolution(f1, args=(r,), 
@@ -557,16 +547,11 @@ def random_gen(listAntStr, listDist, listrl):
                     r = te.loada(antStr)
                     r.setValues(r.getGlobalParameterIds(), res.x)
                     
-                    r.steadyState()
+                    ss = r.steadyStateSolver
+                    ss.approx_maximum_steps = 5
+
+                    r.steadyStateApproximate()
                     SS_i = r.getFloatingSpeciesConcentrations()
-                    
-                    # Buggy model
-#                    if np.any(SS_i > 1e5):
-#                        r.reset()
-#                        ss.allow_presimulation = True
-#                        ss.presimulation_time = 100
-#                        r.steadyState()
-#                        SS_i = r.getFloatingSpeciesConcentrations()
                     
                     if np.any(SS_i < 1e-5) or np.any(SS_i > 1e5):
                         rnd_dist[l] = listDist[l]
