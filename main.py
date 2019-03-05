@@ -646,56 +646,67 @@ if __name__ == '__main__':
     # Flag to run algorithm
     RUN = True
     
+#%% Analyze True Model
+    
+    # Using one of the test models
+    realModel = ioutils.testModels(modelType)
+    
+    realRR = te.loada(realModel)
+    
+    # Species
+    realNumBoundary = realRR.getNumBoundarySpecies()
+    realNumFloating = realRR.getNumFloatingSpecies()
+    realFloatingIds = np.sort(realRR.getFloatingSpeciesIds())
+    realFloatingIdsInd = list(map(int, [s.strip('S') for s in realRR.getFloatingSpeciesIds()]))
+    realBoundaryIds = np.sort(realRR.getBoundarySpeciesIds())
+    realBoundaryIdsInd = list(map(int,[s.strip('S') for s in realRR.getBoundarySpeciesIds()]))
+    realBoundaryVal = realRR.getBoundarySpeciesConcentrations()
+    realGlobalParameterIds = realRR.getGlobalParameterIds()
+    
+    # Control Coefficients and Fluxes
+    realRR.steadyState()
+    realSteadyState = realRR.getFloatingSpeciesConcentrations()
+    realSteadyStateRatio = np.divide(realSteadyState, np.min(realSteadyState))
+    realFlux = realRR.getReactionRates()
+    realRR.reset()
+    realRR.steadyState()
+    realFluxCC = realRR.getScaledFluxControlCoefficientMatrix()
+    realConcCC = realRR.getScaledConcentrationControlCoefficientMatrix()
+    
+    # Ordering
+    realFluxCCrow = realFluxCC.rownames
+    realFluxCCcol = realFluxCC.colnames
+    realFluxCC = realFluxCC[np.argsort(realFluxCCrow)]
+    realFluxCC = realFluxCC[:,np.argsort(realFluxCCcol)]
+    
+    realConcCCrow = realConcCC.rownames
+    realConcCCcol = realConcCC.colnames
+    realConcCC = realConcCC[np.argsort(realConcCCrow)]
+    realConcCC = realConcCC[:,np.argsort(realConcCCcol)]
+    
+    realFlux = realFlux[np.argsort(realRR.getFloatingSpeciesIds())]
+    
+    # Number of Species and Ranges
+    ns = realNumBoundary + realNumFloating # Number of species
+    nr = realRR.getNumReactions() # Number of reactions
+    
+    n_range = range(1, n_gen)
+    ens_range = range(ens_size)
+    mut_range = range(mut_size)
+    r_range = range(nr)
+    
+    realCount = np.array(np.unravel_index(np.argsort(realFluxCC, axis=None), realFluxCC.shape)).T
+        
     #%%
     if RUN:
-        # Using one of the test models
-        realModel = ioutils.testModels(modelType)
-        
-        realRR = te.loada(realModel)
-        
-#        realSS = realRR.steadyStateSolver
-#        realSS.allow_approx = True
-#        realSS.allow_presimulation = True
-#        realSS.presimulation_time = 100
-        
-        realNumBoundary = realRR.getNumBoundarySpecies()
-        realNumFloating = realRR.getNumFloatingSpecies()
-        realFloatingIds = np.sort(realRR.getFloatingSpeciesIds())
-        realFloatingIdsInd = list(map(int, [s.strip('S') for s in realRR.getFloatingSpeciesIds()]))
-        realBoundaryIds = np.sort(realRR.getBoundarySpeciesIds())
-        realBoundaryIdsInd = list(map(int,[s.strip('S') for s in realRR.getBoundarySpeciesIds()]))
-        realBoundaryVal = realRR.getBoundarySpeciesConcentrations()
-        realGlobalParameterIds = realRR.getGlobalParameterIds()
-        
-        realRR.steadyState()
-        realSteadyState = realRR.getFloatingSpeciesConcentrations()
-        realSteadyStateRatio = np.divide(realSteadyState, np.min(realSteadyState))
-        realFlux = realRR.getReactionRates()
-        realRR.reset()
-        realRR.steadyState()
-        realFluxCC = realRR.getScaledFluxControlCoefficientMatrix()
-        realConcCC = realRR.getScaledConcentrationControlCoefficientMatrix()
-        
-        # Ordering
-        realFluxCCrow = realFluxCC.rownames
-        realFluxCCcol = realFluxCC.colnames
-        realFluxCC = realFluxCC[np.argsort(realFluxCCrow)]
-        realFluxCC = realFluxCC[:,np.argsort(realFluxCCcol)]
-        
-        realConcCCrow = realConcCC.rownames
-        realConcCCcol = realConcCC.colnames
-        realConcCC = realConcCC[np.argsort(realConcCCrow)]
-        realConcCC = realConcCC[:,np.argsort(realConcCCcol)]
-        
-        ns = realNumBoundary + realNumFloating # Number of species
-        nr = realRR.getNumReactions() # Number of reactions
-        
-        realCount = np.array(np.unravel_index(np.argsort(realFluxCC, axis=None), realFluxCC.shape)).T
         
         print("Original Control Coefficients")
         print(realConcCC)
         print("Original Steady State Ratio")
         print(realSteadyStateRatio)
+        
+        # Define Seed and Ranges
+        np.random.seed(r_seed)
         
         if NOISE:
             for i in range(len(realConcCC)):
@@ -706,21 +717,14 @@ if __name__ == '__main__':
             
             print("Control Coefficients with Noise Added")
             print(realConcCC)
-    #%%
-        # Define seed and ranges
-        np.random.seed(r_seed)
         
+        # Initualize Lists
         best_dist = []
         avg_dist = []
         med_dist = []
         top5_dist = []
         
-        n_range = range(1, n_gen)
-        ens_range = range(ens_size)
-        mut_range = range(mut_size)
-        r_range = range(nr)
-        
-    #%%
+        # Start Timing
         t1 = time.time()
         
         # Initialize
