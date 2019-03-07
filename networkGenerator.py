@@ -1,33 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# Generate random mass-action networks using uniuni, biuni, unibi and bibi
-# The following reaction patterns are currently not allowed:
-# X -> X
-
-# X + Y -> X
-# Y + X -> X 
-# X + X -> X
-
-# X -> X + Y
-# X -> Y + X
-# X -> X + X
-
-# X + X -> X + X
-# X + Y  -> X + Y
-# Y + X -> X + Y
-# Y + X -> Y + X
-# X + Y -> X + Y
-# X + Y -> Y + X
-
-# How to use:
-#   rl =  generateReactionList (6, 5)
-#   st = getFullStoichiometryMatrix (rl)
-#   stt = removeBoundaryNodes (st)
-#   if len (stt[1]) > 0:
-#      antStr = genAntimonyScript (stt[1], stt[2], rl)
-
-# floating and boundary Ids are represented as integers
-
 import tellurium as te
 import random
 import numpy as np
@@ -110,11 +82,9 @@ def pickReactionType():
 # reactionList = [nSpecies, reaction, ....]
 # reaction = [reactionType, [list of reactants], [list of product], rateConstant]
 def generateReactionList(nSpecies, nReactions, boundaryIdx):
-#    connected = False
-    
-#    while not connected:
+
     reactionList = []
-    for r in range(nReactions):
+    for r_idx in range(nReactions):
         rct = [col[3] for col in reactionList]
         prd = [col[4] for col in reactionList]
         
@@ -158,9 +128,6 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                 inhib_id = [reg_id[1]]
                 if len(reg_id) == 0:
                     regType = RegulationType.DEFAULT
-            
-#            if ((np.any(np.isin(rct_id, boundaryIdx))) or (np.any(np.isin(prd_id, boundaryIdx)))):
-#                revType = Reversibility.IRREVERSIBLE
             
             reactionList.append([rType, 
                                  regType, 
@@ -213,9 +180,6 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                 if len(reg_id) == 0:
                     regType = RegulationType.DEFAULT
             
-#            if np.any(np.isin(prd_id, boundaryIdx)):
-#                revType = Reversibility.IRREVERSIBLE
-            
             reactionList.append([rType, 
                                  regType, 
                                  revType, 
@@ -266,9 +230,6 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                 inhib_id = [reg_id[1]]
                 if len(reg_id) == 0:
                     regType = RegulationType.DEFAULT
-            
-#            if np.any(np.isin(rct_id, boundaryIdx)):
-#                revType = Reversibility.IRREVERSIBLE
             
             reactionList.append ([rType, 
                                   regType, 
@@ -331,8 +292,6 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                                   act_id, 
                                   inhib_id])
             
-#        connected = analysis.isConnected(reactionList)
-        
     return reactionList
     
 
@@ -628,7 +587,7 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
     # List rate constants
     antStr = antStr + '\n'
     Klist_f = [item for sublist in Klist for item in sublist]
-#    Klist_f = np.unique(Klist_f)
+    
     for i in range(len(Klist_f)):
         if Klist_f[i].startswith('Kf'):
             antStr = antStr + Klist_f[i] + ' = 1\n'
@@ -650,7 +609,7 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
     
     # Initialize floating species
     for index, find in enumerate(floatingIds):
-        antStr = antStr + str(find) + ' = ' + str(np.random.randint (1,6)) + '\n'
+        antStr = antStr + str(find) + ' = ' + '1\n'
         
     return antStr
      
@@ -661,13 +620,13 @@ def generateParameterBoundary(glgp):
     
     for i in range(len(glgp)):
         if glgp[i].startswith('Kf'):
-            pBound.append((1e-2, 10.))
+            pBound.append((1e-3, 100.))
         elif glgp[i].startswith('Kr'):
-            pBound.append((1e-2, 10.))
+            pBound.append((1e-3, 100.))
         elif glgp[i].startswith('Ka'):
-            pBound.append((1e-2, 10.))
+            pBound.append((1e-3, 100.))
         elif glgp[i].startswith('Ki'):
-            pBound.append((1e-2, 10.))
+            pBound.append((1e-3, 100.))
 
     return pBound
     
