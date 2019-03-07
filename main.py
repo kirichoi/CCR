@@ -72,10 +72,10 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
         
         r = te.loada(listantStr[m])
         
-        ss = r.steadyStateSolver
-        ss.approx_maximum_steps = 5
-
-        r.steadyStateApproximate()
+#        ss = r.steadyStateSolver
+#        ss.approx_maximum_steps = 5
+#
+#        r.steadyStateApproximate()
         
         tempdiff = np.max(np.abs(realConcCC - 
                 r.getScaledConcentrationControlCoefficientMatrix()), axis=0)
@@ -641,7 +641,7 @@ if __name__ == '__main__':
     # Data settings
     EXPORT_OUTPUT = True # Flag for saving collected models
     EXPORT_SETTINGS = False # Flag for saving current settings
-    EXPORT_PATH = './output_ffl_rev_opti_fixed_div' # Path to save the output
+    EXPORT_PATH = './output_ffl_rev_opti_fixed_div_test' # Path to save the output
     
     # Flag to run algorithm
     RUN = True
