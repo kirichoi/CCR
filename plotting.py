@@ -136,3 +136,48 @@ def plotDistanceHistogramWithKDE(dist_top, log_dens, minInd, nbin=40, SAVE_PATH=
             plt.savefig(SAVE_PATH, bbox_inches='tight')
     plt.show()
 
+def plotNetwork(path, scale=1.5):
+    """
+    Plot a network diagram
+    
+    :param path: path to a model
+    :param scale: diagram scale
+    """
+    
+    import netplotlib as npl
+    
+    net = npl.Network(path)
+    net.scale = scale
+    net.draw()
+
+
+def plotNetworkEnsemble(path, index=None, threshold=0., scale=1.5):
+    """
+    Plot network ensemble diagram
+    
+    :param path: path to output folder
+    :param index: index of models to be included in the diagram
+    :param threshold: threshold of reactions to be plotted
+    :param scale: diagram scale
+    """
+    
+    import netplotlib as npl
+    
+    model_dir = os.path.join(path, 'models')
+    
+    modelfiles = [f for f in os.listdir(model_dir) if os.path.isfile(os.path.join(model_dir, f))]
+    
+    modelcontent = []
+    for i in modelfiles:
+        sbmlstr = open(os.path.join(model_dir, i), 'r')
+        modelcontent.append(sbmlstr.read())
+        sbmlstr.close()
+    
+    if index >= len(modelcontent):
+        raise Exception("Specified index value is larger than the size of the list")
+    
+    net = npl.NetworkEnsemble(modelcontent[:index])
+    net.plottingThreshold = threshold
+    net.scale = scale
+    net.drawWeightedDiagram()
+
