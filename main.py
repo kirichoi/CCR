@@ -31,12 +31,17 @@ def f1(k_list, *args):
     
     try:
         args[0].steadyStateApproximate()
-        objCC = args[0].getScaledConcentrationControlCoefficientMatrix()
-        objCC[np.abs(objCC) < 1e-16] = 0 # Set small values to zero
+        objCCC = args[0].getScaledConcentrationControlCoefficientMatrix()
+        objCCC[np.abs(objCCC) < 1e-16] = 0 # Set small values to zero
+        
+        objCCC_row = objCCC.rownames
+        objCCC_col = objCCC.colnames
+        objCCC = objCCC[np.argsort(objCCC_row)]
+        objCCC = objCCC[:,np.argsort(objCCC_col)]
         
 #        testCount = np.array(np.unravel_index(np.argsort(objCC, axis=None), objCC.shape)).T
-        dist_obj = w1*((np.linalg.norm(realConcCC - objCC))/
-                    (1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(objCC))))))
+        dist_obj = w1*((np.linalg.norm(realConcCC - objCCC))/
+                    (1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(objCCC))))))
                     
 #        + np.sum(args[0].getReactionRates() < 0))
 #                    + 1/(1 + np.sum((testCount == realCount).all(axis=1))))
@@ -670,7 +675,7 @@ if __name__ == '__main__':
     # Flag for saving current settings
     EXPORT_SETTINGS = False 
     # Path to save the output
-    EXPORT_PATH = './output_ffl_rev_opti_fixed_div_test' 
+    EXPORT_PATH = './output_ffl_rev_opti_fixed_div_objord_test' 
     
     # Flag to run algorithm
     RUN = True
