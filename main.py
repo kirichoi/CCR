@@ -609,39 +609,68 @@ if __name__ == '__main__':
     INPUT = None
     READ_SETTINGS = None
     
-    # Test models
-    modelType = 'FFL_r' # 'FFL', 'Linear', 'Nested', 'Branched'
+    # Test models =============================================================
     
-    # General settings
-    n_gen = 300 # Number of generations
-    ens_size = 100 # Size of output ensemble
-    pass_size = int(ens_size/10) # Number of models passed on the next generation without mutation
-    mut_size = int(ens_size/2) # Number of models to mutate
-    maxIter_gen = 1000 # Maximum iteration allowed for random generation
-    maxIter_mut = 1000 # Maximum iteration allowed for mutation
+    # 'FFL', 'Linear', 'Nested', 'Branched'
+    modelType = 'FFL_r' 
     
-    # Optimizer settings
-    optiMaxIter = 100 # Maximum iteration allowed for optimizer
+    
+    # General settings ========================================================
+    
+    # Number of generations
+    n_gen = 300 
+    # Size of output ensemble
+    ens_size = 100 
+    # Number of models passed on the next generation without mutation
+    pass_size = int(ens_size/10) 
+    # Number of models to mutate
+    mut_size = int(ens_size/2) 
+    # Maximum iteration allowed for random generation
+    maxIter_gen = 20 
+    # Maximum iteration allowed for mutation
+    maxIter_mut = 20 
+    
+    
+    # Optimizer settings ======================================================
+    
+    # Maximum iteration allowed for optimizer
+    optiMaxIter = 100 
     optiTol = 1.
     optiPolish = False
-    w1 = 16 # Weight for control coefficients when calculating the distance
-    w2 = 1.0 # Weight for steady-state and flux when calculating the distance
+    # Weight for control coefficients when calculating the distance
+    w1 = 16 
+    # Weight for steady-state and flux when calculating the distance
+    w2 = 1.0 
     
-    # Random settings
-    r_seed = 123123 # random seed
-    r_roulette = False # Flag for using random roulette or best of pair for selection process
-    NOISE = False # Flag for adding Gaussian noise to steady-state and control coefficiant values
-    ABS_NOISE_STD = 0.01 # Standard deviation of Gaussian noise
-    REL_NOISE_STD = 0.1 # Standard deviation of Gaussian noise
     
-    # Plotting settings
-    PLOT = True # Flag for plots
-    SAVE_PLOT = True # Flag for saving plots
+    # Random settings =========================================================
     
-    # Data settings
-    EXPORT_OUTPUT = True # Flag for saving collected models
-    EXPORT_SETTINGS = False # Flag for saving current settings
-    EXPORT_PATH = './output_ffl_rev_opti_fixed_div_test' # Path to save the output
+    # random seed
+    r_seed = 123123 
+    # Flag for adding Gaussian noise to steady-state and control coefficiant values
+    NOISE = False 
+    # Standard deviation of Gaussian noise
+    ABS_NOISE_STD = 0.01
+    # Standard deviation of Gaussian noise
+    REL_NOISE_STD = 0.1 
+    
+    
+    # Plotting settings =======================================================
+    
+    # Flag for plots
+    PLOT = True 
+    # Flag for saving plots
+    SAVE_PLOT = True 
+    
+    
+    # Data settings ===========================================================
+    
+    # Flag for saving collected models
+    EXPORT_OUTPUT = True 
+    # Flag for saving current settings
+    EXPORT_SETTINGS = False 
+    # Path to save the output
+    EXPORT_PATH = './output_ffl_rev_opti_fixed_div_test' 
     
     # Flag to run algorithm
     RUN = True
@@ -746,19 +775,13 @@ if __name__ == '__main__':
         
         # TODO: Remove for loop
         for n in n_range:
-            if r_roulette:
-                ens_inv = np.divide(1, dist_top[pass_size:])
-                ens_prob = np.divide(ens_inv, np.sum(ens_inv))
-                mut_ind = np.random.choice(np.arange(pass_size, ens_size), 
-                                           size=mut_size, replace=False, p=ens_prob)
-            else:
-                minind = np.argsort(ens_dist)[:pass_size]
-                tarind = np.delete(np.arange(ens_size), minind)
-                mut_p = 1/ens_dist[tarind]/np.sum(1/ens_dist[tarind])
-                mut_ind = np.random.choice(tarind, size=mut_size-pass_size, 
-                                                   replace=False, p=mut_p)
-                mut_ind = np.append(mut_ind, minind)
-                mut_ind_inv = np.setdiff1d(np.arange(ens_size), mut_ind)
+            minind = np.argsort(ens_dist)[:pass_size]
+            tarind = np.delete(np.arange(ens_size), minind)
+            mut_p = 1/ens_dist[tarind]/np.sum(1/ens_dist[tarind])
+            mut_ind = np.random.choice(tarind, size=mut_size-pass_size, 
+                                               replace=False, p=mut_p)
+            mut_ind = np.append(mut_ind, minind)
+            mut_ind_inv = np.setdiff1d(np.arange(ens_size), mut_ind)
             
             eval_dist, eval_model, eval_rl = mutate_and_evaluate(ens_model[mut_ind], 
                                                                  ens_dist[mut_ind], 
