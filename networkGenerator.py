@@ -23,20 +23,20 @@ class Reversibility:
     REVERSIBLE = 1
 
 class RP:
-    UniUni = 0.7
-    BiUni = 0.125
-    UniBi = 0.125
+    UniUni = 0.75
+    BiUni = 0.1
+    UniBi = 0.1
     BiBI  = 0.05
     
 class RLP:
-    Default = 0.83
-    Inhib = 0.08
-    Activ = 0.08
-    Inhibactiv = 0.01
+    Default = 0.73
+    Inhib = 0.12
+    Activ = 0.12
+    Inhibactiv = 0.03
     
 class REVP:
-    Irreversible = 0.
-    Reversible = 1.
+    Irreversible = 1.
+    Reversible = 0.
 
 #def pickRateLawType():
 #    rt = np.random.random()
@@ -620,13 +620,13 @@ def generateParameterBoundary(glgp):
     
     for i in range(len(glgp)):
         if glgp[i].startswith('Kf'):
-            pBound.append((1e-3, 100.))
+            pBound.append((1e-2, 10.))
         elif glgp[i].startswith('Kr'):
-            pBound.append((1e-3, 100.))
+            pBound.append((1e-2, 10.))
         elif glgp[i].startswith('Ka'):
-            pBound.append((1e-3, 100.))
+            pBound.append((1e-2, 10.))
         elif glgp[i].startswith('Ki'):
-            pBound.append((1e-3, 100.))
+            pBound.append((1e-2, 10.))
 
     return pBound
     
