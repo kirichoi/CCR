@@ -258,7 +258,7 @@ def testModels(modelType):
         S2 = 1
         S3 = 1
         """
-    elif modelType == 'FFL_a':
+    elif modelType == 'FFL_m_a':
         # FFL    
         realModel = """
         var S1, S2, S3;
@@ -282,7 +282,7 @@ def testModels(modelType):
         S2 = 1
         S3 = 1
         """
-    elif modelType == 'FFL_i':
+    elif modelType == 'FFL_m_i':
         # I1FFL
         realModel = """
         var S1, S2, S3;
