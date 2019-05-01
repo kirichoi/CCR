@@ -32,20 +32,23 @@ def f1(k_list, *args):
     try:
         args[0].steadyStateApproximate()
         objCCC = args[0].getScaledConcentrationControlCoefficientMatrix()
-        objCCC[np.abs(objCCC) < 1e-16] = 0 # Set small values to zero
-        
-        objCCC_row = objCCC.rownames
-        objCCC_col = objCCC.colnames
-        objCCC = objCCC[np.argsort(objCCC_row)]
-        objCCC = objCCC[:,np.argsort(objCCC_col)]
-        
-#        testCount = np.array(np.unravel_index(np.argsort(objCC, axis=None), objCC.shape)).T
-        dist_obj = w1*((np.linalg.norm(realConcCC - objCCC))/
-                    (1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(objCCC))))))
+        if np.isnan(objCCC).any():
+            dist_obj = 10000
+        else:
+            objCCC[np.abs(objCCC) < 1e-12] = 0 # Set small values to zero
+            
+            objCCC_row = objCCC.rownames
+            objCCC_col = objCCC.colnames
+            objCCC = objCCC[np.argsort(objCCC_row)]
+            objCCC = objCCC[:,np.argsort(objCCC_col)]
+            
+    #        testCount = np.array(np.unravel_index(np.argsort(objCC, axis=None), objCC.shape)).T
+            dist_obj = w1*((np.linalg.norm(realConcCC - objCCC))/
+                        (1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(objCCC))))))
                     
-#        + np.sum(args[0].getReactionRates() < 0))
-#                    + 1/(1 + np.sum((testCount == realCount).all(axis=1))))
-#        dist_obj = (np.linalg.norm(realConcCC - objCC))
+    #        + np.sum(args[0].getReactionRates() < 0))
+    #                    + 1/(1 + np.sum((testCount == realCount).all(axis=1))))
+    #        dist_obj = (np.linalg.norm(realConcCC - objCC))
         
     except:
         countf += 1
@@ -77,14 +80,11 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
         
         r = te.loada(listantStr[m])
         
-#        ss = r.steadyStateSolver
-#        ss.approx_maximum_steps = 5
-#
-#        r.steadyStateApproximate()
+        r.steadyStateApproximate()
         
         tempdiff = np.max(np.abs(realConcCC - 
-                r.getScaledConcentrationControlCoefficientMatrix()), axis=0)
-        
+                   r.getScaledConcentrationControlCoefficientMatrix()), axis=0)
+    
         stt = [[],[],[]]
         reactionList = rl_track[0]
         
@@ -113,8 +113,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
             r_idx = np.random.choice(np.arange(nr), 
                                      p=np.divide(tempdiff,np.sum(tempdiff)))
             posRctInd = np.append(np.array(realFloatingIdsInd)[np.where(
-                        np.abs(realConcCC[:,r_idx]) > 1e-12)[0]], np.array(realBoundaryIdsInd))
-            
+                        np.abs(realConcCC[:,r_idx]) > 1e-12)[0]], np.array(realBoundaryIdsInd)).astype(int)
             rType, regType, revType = ng.pickReactionType()
             reactionList = copy.deepcopy(listrl[m])
             
@@ -325,11 +324,8 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                 counts = 0
                 countf = 0
                 
-                ss = r.steadyStateSolver
-                ss.approx_maximum_steps = 5
-
                 r.steadyStateApproximate()
-                
+
                 p_bound = ng.generateParameterBoundary(r.getGlobalParameterIds())
                 res = scipy.optimize.differential_evolution(f1, args=(r,), 
                             bounds=p_bound, maxiter=optiMaxIter, tol=optiTol,
@@ -343,11 +339,10 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                     r = te.loada(antStr)
                     r.setValues(r.getGlobalParameterIds(), res.x)
                     
-                    ss = r.steadyStateSolver
-                    ss.approx_maximum_steps = 5
-
                     r.steadyStateApproximate()
                     SS_i = r.getFloatingSpeciesConcentrations()
+                    
+                    r.steadyStateApproximate()
                     
                     if np.any(SS_i < 1e-5) or np.any(SS_i > 1e5):
                         eval_dist[m] = listdist[m]
@@ -361,7 +356,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                             eval_model[m] = listantStr[m]
                             eval_rl[m] = listrl[m]
                         else:
-                            concCC_i[np.abs(concCC_i) < 1e-16] = 0 # Set small values to zero
+                            concCC_i[np.abs(concCC_i) < 1e-12] = 0 # Set small values to zero
                             
                             concCC_i_row = concCC_i.rownames
                             concCC_i_col = concCC_i.colnames
@@ -427,11 +422,8 @@ def initialize():
             counts = 0
             countf = 0
             
-            ss = r.steadyStateSolver
-            ss.approx_maximum_steps = 5
-
             r.steadyStateApproximate()
-                
+            
             p_bound = ng.generateParameterBoundary(r.getGlobalParameterIds())
             res = scipy.optimize.differential_evolution(f1, args=(r,), 
                                bounds=p_bound, maxiter=optiMaxIter, tol=optiTol,
@@ -445,11 +437,10 @@ def initialize():
                 r = te.loada(antStr)
                 r.setValues(r.getGlobalParameterIds(), res.x)
                     
-                ss = r.steadyStateSolver
-                ss.approx_maximum_steps = 5
-
                 r.steadyStateApproximate()
                 SS_i = r.getFloatingSpeciesConcentrations()
+                
+                r.steadyStateApproximate()
                 
                 if np.any(SS_i < 1e-5) or np.any(SS_i > 1e5):
                     numBadModels += 1
@@ -459,7 +450,7 @@ def initialize():
                     if np.isnan(concCC_i).any():
                         numBadModels += 1
                     else:
-                        concCC_i[np.abs(concCC_i) < 1e-16] = 0 # Set small values to zero
+                        concCC_i[np.abs(concCC_i) < 1e-12] = 0 # Set small values to zero
                         
                         concCC_i_row = concCC_i.rownames
                         concCC_i_col = concCC_i.colnames
@@ -479,6 +470,9 @@ def initialize():
                         ens_model[numGoodModels] = r.getAntimony(current=True)
                         ens_rl[numGoodModels] = rl
                         rl_track.append(rl)
+                        
+                        print(numGoodModels)
+                        print(r.getAntimony(current=True))
                         
                         numGoodModels = numGoodModels + 1
         except:
@@ -533,9 +527,6 @@ def random_gen(listAntStr, listDist, listrl):
                 counts = 0
                 countf = 0
                 
-                ss = r.steadyStateSolver
-                ss.approx_maximum_steps = 5
-
                 r.steadyStateApproximate()
                 
                 p_bound = ng.generateParameterBoundary(r.getGlobalParameterIds())
@@ -551,12 +542,11 @@ def random_gen(listAntStr, listDist, listrl):
                 else:
                     r = te.loada(antStr)
                     r.setValues(r.getGlobalParameterIds(), res.x)
-                    
-                    ss = r.steadyStateSolver
-                    ss.approx_maximum_steps = 5
 
                     r.steadyStateApproximate()
                     SS_i = r.getFloatingSpeciesConcentrations()
+                    
+                    r.steadyStateApproximate()
                     
                     if np.any(SS_i < 1e-5) or np.any(SS_i > 1e5):
                         rnd_dist[l] = listDist[l]
@@ -570,7 +560,7 @@ def random_gen(listAntStr, listDist, listrl):
                             rnd_model[l] = listAntStr[l]
                             rnd_rl[l] = listrl[l]
                         else:
-                            concCC_i[np.abs(concCC_i) < 1e-16] = 0 # Set small values to zero
+                            concCC_i[np.abs(concCC_i) < 1e-12] = 0 # Set small values to zero
                             
                             concCC_i_row = concCC_i.rownames
                             concCC_i_col = concCC_i.colnames
@@ -600,7 +590,7 @@ def random_gen(listAntStr, listDist, listrl):
                 rnd_model[l] = listAntStr[l]
                 rnd_rl[l] = listrl[l]
         antimony.clearPreviousLoads()
-    
+        
     return rnd_dist, rnd_model, rnd_rl
 
 # TODO: simulated annealing (multiply to fitness for rate constants)
@@ -617,71 +607,82 @@ if __name__ == '__main__':
     # Test models =============================================================
     
     # 'FFL', 'Linear', 'Nested', 'Branched'
-    modelType = 'FFL_r' 
+    modelType = 'Full1' 
     
     
     # General settings ========================================================
     
     # Number of generations
-    n_gen = 300 
+    n_gen = 500
     # Size of output ensemble
-    ens_size = 100 
+    ens_size = 200
     # Number of models passed on the next generation without mutation
-    pass_size = int(ens_size/10) 
+    pass_size = int(ens_size/10)
     # Number of models to mutate
-    mut_size = int(ens_size/2) 
+    mut_size = int(ens_size/2)
     # Maximum iteration allowed for random generation
-    maxIter_gen = 20 
+    maxIter_gen = 20
     # Maximum iteration allowed for mutation
-    maxIter_mut = 20 
+    maxIter_mut = 20
+    # Set conserved moiety
+    conservedMoiety = True
     
     
     # Optimizer settings ======================================================
     
     # Maximum iteration allowed for optimizer
-    optiMaxIter = 100 
+    optiMaxIter = 100
     optiTol = 1.
     optiPolish = False
     # Weight for control coefficients when calculating the distance
-    w1 = 16 
+    w1 = 16
     # Weight for steady-state and flux when calculating the distance
-    w2 = 1.0 
+    w2 = 1.0
     
     
     # Random settings =========================================================
     
     # random seed
-    r_seed = 123123 
+    r_seed = 123123
     # Flag for adding Gaussian noise to steady-state and control coefficiant values
-    NOISE = False 
+    NOISE = False
     # Standard deviation of Gaussian noise
     ABS_NOISE_STD = 0.01
     # Standard deviation of Gaussian noise
-    REL_NOISE_STD = 0.1 
+    REL_NOISE_STD = 0.1
     
     
     # Plotting settings =======================================================
     
     # Flag for plots
-    PLOT = True 
+    PLOT = True
     # Flag for saving plots
-    SAVE_PLOT = True 
+    SAVE_PLOT = True
     
     
     # Data settings ===========================================================
     
+    # Flag for collecting models
+    EXPORT_ALL_MODELS = True
     # Flag for saving collected models
-    EXPORT_OUTPUT = True 
+    EXPORT_OUTPUT = True
     # Flag for saving current settings
-    EXPORT_SETTINGS = False 
+    EXPORT_SETTINGS = False
     # Path to save the output
-    EXPORT_PATH = './output_ffl_rev_opti_fixed_div_objord_test' 
+    EXPORT_PATH = './USE/output_Full1_3'
     
     # Flag to run algorithm
     RUN = True
     
 #%% Analyze True Model
+    if conservedMoiety:
+        roadrunner.Config.setValue(roadrunner.Config.LOADSBMLOPTIONS_CONSERVED_MOIETIES, True)
     
+    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX, True)
+    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_MAX_STEPS, 15)
+    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TIME, 10000)
+#    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TOL, 1e-3)
+        
     # Using one of the test models
     realModel = ioutils.testModels(modelType)
     
@@ -692,12 +693,15 @@ if __name__ == '__main__':
     realNumFloating = realRR.getNumFloatingSpecies()
     realFloatingIds = np.sort(realRR.getFloatingSpeciesIds())
     realFloatingIdsInd = list(map(int, [s.strip('S') for s in realRR.getFloatingSpeciesIds()]))
+    realFloatingIdsInd.sort()
     realBoundaryIds = np.sort(realRR.getBoundarySpeciesIds())
     realBoundaryIdsInd = list(map(int,[s.strip('S') for s in realRR.getBoundarySpeciesIds()]))
+    realBoundaryIdsInd.sort()
     realBoundaryVal = realRR.getBoundarySpeciesConcentrations()
     realGlobalParameterIds = realRR.getGlobalParameterIds()
     
     # Control Coefficients and Fluxes
+    
     realRR.steadyState()
     realSteadyState = realRR.getFloatingSpeciesConcentrations()
     realSteadyStateRatio = np.divide(realSteadyState, np.min(realSteadyState))
@@ -706,6 +710,9 @@ if __name__ == '__main__':
     realRR.steadyState()
     realFluxCC = realRR.getScaledFluxControlCoefficientMatrix()
     realConcCC = realRR.getScaledConcentrationControlCoefficientMatrix()
+    
+    realFluxCC[np.abs(realFluxCC) < 1e-12] = 0
+    realConcCC[np.abs(realConcCC) < 1e-12] = 0
     
     # Ordering
     realFluxCCrow = realFluxCC.rownames
@@ -797,9 +804,6 @@ if __name__ == '__main__':
             
     #        for tt in range(len(mut_ind)):
     #            r = te.loada(ens_model[mut_ind[tt]])
-    #            ss = r.steadyStateSolver
-    #            ss.allow_approx = True
-    #            ss.allow_presimulation = False
     #            try:
     #                r.steadyState()
     #            except:
@@ -823,19 +827,19 @@ if __name__ == '__main__':
             model_top = ens_model[dist_top_ind]
 #            rl_top = ens_rl[dist_top_ind]
             
-            print("In generation: " + str(n + 1))
-            print("Minimum distance: " + str(dist_top[0]))
-            print("Average distance: " + str(np.average(dist_top)))
             best_dist.append(dist_top[0])
             avg_dist.append(np.average(dist_top))
             med_dist.append(np.median(dist_top))
             top5_dist.append(np.average(np.unique(dist_top)[:int(0.05*ens_size)]))
             
+            print("In generation: " + str(n + 1))
+            print("Minimum distance: " + str(best_dist[-1]))
+            print("Top 5 distance: " + str(top5_dist[-1]))
+            print("Average distance: " + str(avg_dist[-1]))
+            
+            
     #        for tt in range(len(mut_ind_inv)):
     #            r = te.loada(ens_model[mut_ind_inv[tt]])
-    #            ss = r.steadyStateSolver
-    #            ss.allow_approx = True
-    #            ss.allow_presimulation = False
     #            try:
     #                r.steadyState()
     #            except:
@@ -857,9 +861,14 @@ if __name__ == '__main__':
         
         #%%
         # Collect models
+        
         minInd, log_dens = analysis.selectWithKernalDensity(model_top, dist_top)
         if len(minInd[0]) == 0:
             minInd = np.array([[len(model_top) - 1]])
+                
+        if EXPORT_ALL_MODELS:
+            minInd = np.array([[len(model_top) - 1]])
+        
         model_col = model_top[:minInd[0][0]]
         dist_col = dist_top[:minInd[0][0]]
             
