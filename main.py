@@ -952,7 +952,7 @@ if __name__ == '__main__':
                 ioutils.exportSettings(settings, path=EXPORT_PATH)
             
             if EXPORT_OUTPUT:
-                ioutils.exportOutputs(model_col, dist_col, best_dist, avg_dist, 
+                ioutils.exportOutputs(model_col, dist_col, [best_dist, avg_dist, med_dist, top5_dist], 
                                       settings, t2-t1, rl_track, path=EXPORT_PATH)
 
         

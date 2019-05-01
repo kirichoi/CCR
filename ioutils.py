@@ -13,7 +13,7 @@ def exportSettings(settingsDict):
     """
     """
     
-def exportOutputs(models, dists, best_dist, avg_dist, settings, time, rl_track, path=None):
+def exportOutputs(models, dists, dist_list, settings, time, rl_track, path=None):
     """
     Export all outputs to specified path
     
@@ -32,7 +32,11 @@ def exportOutputs(models, dists, best_dist, avg_dist, settings, time, rl_track, 
     df = pd.DataFrame(np.array(dists), columns=['distance'])
     df.to_csv(os.path.join(outputdir, 'dist_collected.txt'))
     
-    stat = pd.DataFrame(np.array([best_dist, avg_dist]).T, columns=['generation best', 'generation average'])
+    stat = pd.DataFrame(np.array([dist_list]).T, 
+                        columns=['generation best', 
+                                 'generation average',
+                                 'generation median',
+                                 'generation top5'])
     stat.to_csv(os.path.join(outputdir, 'dist_stat.txt'))
     
     outputtxt = open(os.path.join(outputdir, 'report.txt'), 'w')
