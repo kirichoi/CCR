@@ -42,14 +42,9 @@ def f1(k_list, *args):
             objCCC = objCCC[np.argsort(objCCC_row)]
             objCCC = objCCC[:,np.argsort(objCCC_col)]
             
-    #        testCount = np.array(np.unravel_index(np.argsort(objCC, axis=None), objCC.shape)).T
-            dist_obj = w1*((np.linalg.norm(realConcCC - objCCC))/
-                        (1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(objCCC))))))
-                    
-    #        + np.sum(args[0].getReactionRates() < 0))
-    #                    + 1/(1 + np.sum((testCount == realCount).all(axis=1))))
-    #        dist_obj = (np.linalg.norm(realConcCC - objCC))
-        
+            dist_obj = ((np.linalg.norm(realConcCC - objCCC))*(1 + 
+                        np.sum(np.not_equal(np.sign(np.array(realConcCC)), 
+                                            np.sign(np.array(objCCC))))))
     except:
         countf += 1
         dist_obj = 10000
@@ -439,13 +434,9 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                             concCC_i = concCC_i[np.argsort(concCC_i_row)]
                             concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                             
-#                            count_i = np.array(np.unravel_index(np.argsort(concCC_i, axis=None), concCC_i.shape)).T
-                            dist_i = w1*((np.linalg.norm(realConcCC - concCC_i))/
-                                      (1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(concCC_i))))))
-#                            + np.sum(r.getReactionRates() < 0))
-#                                        + 1/(1 + np.sum((count_i == realCount).all(axis=1))))
-                            
-#                            dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
+                            dist_i = ((np.linalg.norm(realConcCC - concCC_i))*(1 + 
+                                        np.sum(np.not_equal(np.sign(np.array(realConcCC)), 
+                                                            np.sign(np.array(concCC_i))))))
                             
                             if dist_i < listdist[m]:
                                 eval_dist[m] = dist_i
@@ -533,22 +524,15 @@ def initialize():
                         concCC_i = concCC_i[np.argsort(concCC_i_row)]
                         concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                         
-#                        count_i = np.array(np.unravel_index(np.argsort(concCC_i, axis=None), concCC_i.shape)).T
-                        dist_i = w1*((np.linalg.norm(realConcCC - concCC_i))/
-                                      (1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(concCC_i))))))
-#                        + np.sum(r.getReactionRates() < 0))
-#                                    + 1/(1 + np.sum((count_i == realCount).all(axis=1))))
-                        
-#                        dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
+                        dist_i = ((np.linalg.norm(realConcCC - concCC_i))*(1 + 
+                                        np.sum(np.not_equal(np.sign(np.array(realConcCC)), 
+                                                            np.sign(np.array(concCC_i))))))
                         
                         ens_dist[numGoodModels] = dist_i
                         r.reset()
                         ens_model[numGoodModels] = r.getAntimony(current=True)
                         ens_rl[numGoodModels] = rl
                         rl_track.append(rl)
-                        
-                        print(numGoodModels)
-                        print(r.getAntimony(current=True))
                         
                         numGoodModels = numGoodModels + 1
         except:
@@ -643,13 +627,9 @@ def random_gen(listAntStr, listDist, listrl):
                             concCC_i = concCC_i[np.argsort(concCC_i_row)]
                             concCC_i = concCC_i[:,np.argsort(concCC_i_col)]
                             
-#                            count_i = np.array(np.unravel_index(np.argsort(concCC_i, axis=None), concCC_i.shape)).T
-                            dist_i = w1*((np.linalg.norm(realConcCC - concCC_i))/
-                                      (1 + np.sum(np.equal(np.sign(np.array(realConcCC)), np.sign(np.array(concCC_i))))))
-#                            + np.sum(r.getReactionRates() < 0))
-#                                        + 1/(1 + np.sum((count_i == realCount).all(axis=1))))
-                            
-#                            dist_i = w1*(np.linalg.norm(realConcCC - concCC_i))
+                            dist_i = ((np.linalg.norm(realConcCC - concCC_i))*(1 + 
+                                        np.sum(np.not_equal(np.sign(np.array(realConcCC)), 
+                                                            np.sign(np.array(concCC_i))))))
                             
                             if dist_i < listDist[l]:
                                 rnd_dist[l] = dist_i
