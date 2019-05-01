@@ -82,9 +82,13 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
         
         r.steadyStateApproximate()
         
-        tempdiff = np.max(np.abs(realConcCC - 
-                   r.getScaledConcentrationControlCoefficientMatrix()), axis=0)
-    
+        concCC = r.getScaledConcentrationControlCoefficientMatrix()
+        
+        cFalse = (1 + concCC.shape[0] - np.sum(np.equal(np.sign(np.array(realConcCC)), 
+                  np.sign(np.array(concCC))), axis=0))
+
+        tempdiff = cFalse*np.max(np.abs(realConcCC - concCC), axis=0)
+        
         stt = [[],[],[]]
         reactionList = rl_track[0]
         
