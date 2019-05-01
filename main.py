@@ -776,12 +776,16 @@ if __name__ == '__main__':
         model_top = ens_model[dist_top_ind]
 #        rl_top = ens_rl[dist_top_ind]
         
-        print("Minimum distance: " + str(dist_top[0]))
-        print("Average distance: " + str(np.average(dist_top)))
+        
         best_dist.append(dist_top[0])
         avg_dist.append(np.average(dist_top))
         med_dist.append(np.median(dist_top))
         top5_dist.append(np.average(np.unique(dist_top)[:int(0.05*ens_size)]))
+        
+        print("Minimum distance: " + str(best_dist[-1]))
+        print("Top 5 distance: " + str(top5_dist[-1]))
+        print("Average distance: " + str(avg_dist[-1]))
+
         
         breakFlag = False
         
