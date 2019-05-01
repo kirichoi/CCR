@@ -146,7 +146,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                         inhib_id = []
                         regType = ng.RegulationType.DEFAULT
                     else:
-                        inhib_id = np.random.choice(np.delete(np.arange(ns), cList), size=1).tolist()
+                        inhib_id = np.random.choice(cList, size=1).tolist()
                 elif regType == ng.RegulationType.ACTIVATION:
                     inhib_id = []
                     delList = np.unique(np.concatenate([rct_id, prd_id]))
@@ -156,7 +156,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                         act_id = []
                         regType = ng.RegulationType.DEFAULT
                     else:
-                        act_id = np.random.choice(np.delete(np.arange(ns), delList), size=1).tolist()
+                        act_id = np.random.choice(cList, size=1).tolist()
                 else:
                     delList = np.unique(np.concatenate([rct_id, prd_id]))
                     delList = np.append(delList, list(map(str, realBoundaryIdsInd)))
@@ -166,7 +166,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                         inhib_id = []
                         regType = ng.RegulationType.DEFAULT
                     else:
-                        reg_id = np.random.choice(np.delete(np.arange(ns), delList), size=2)
+                        reg_id = np.random.choice(cList, size=2)
                         if reg_id[0] == reg_id[1]:
                             act_id = []
                             inhib_id = []
@@ -174,7 +174,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                         else:
                             act_id = [reg_id[0]]
                             inhib_id = [reg_id[1]]
-
+                            
                 reactionList[r_idx] = [rType, regType, revType, 
                                        [rct_id[0]], [prd_id[0]], 
                                        act_id, inhib_id]
@@ -211,7 +211,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                         inhib_id = []
                         regType = ng.RegulationType.DEFAULT
                     else:
-                        inhib_id = np.random.choice(np.delete(np.arange(ns), cList), size=1).tolist()
+                        inhib_id = np.random.choice(cList, size=1).tolist()
                 elif regType == ng.RegulationType.ACTIVATION:
                     inhib_id = []
                     delList = np.unique(np.concatenate([rct_id, prd_id]))
@@ -221,7 +221,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                         act_id = []
                         regType = ng.RegulationType.DEFAULT
                     else:
-                        act_id = np.random.choice(np.delete(np.arange(ns), delList), size=1).tolist()
+                        act_id = np.random.choice(cList, size=1).tolist()
                 else:
                     delList = np.unique(np.concatenate([rct_id, prd_id]))
                     delList = np.append(delList, list(map(str, realBoundaryIdsInd)))
@@ -231,7 +231,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                         inhib_id = []
                         regType = ng.RegulationType.DEFAULT
                     else:
-                        reg_id = np.random.choice(np.delete(np.arange(ns), delList), size=2)
+                        reg_id = np.random.choice(cList, size=2)
                         if reg_id[0] == reg_id[1]:
                             act_id = []
                             inhib_id = []
@@ -277,7 +277,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                         inhib_id = []
                         regType = ng.RegulationType.DEFAULT
                     else:
-                        inhib_id = np.random.choice(np.delete(np.arange(ns), cList), size=1).tolist()
+                        inhib_id = np.random.choice(cList, size=1).tolist()
                 elif regType == ng.RegulationType.ACTIVATION:
                     inhib_id = []
                     delList = np.unique(np.concatenate([rct_id, prd_id]))
@@ -287,7 +287,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                         act_id = []
                         regType = ng.RegulationType.DEFAULT
                     else:
-                        act_id = np.random.choice(np.delete(np.arange(ns), delList), size=1).tolist()
+                        act_id = np.random.choice(cList, size=1).tolist()
                 else:
                     delList = np.unique(np.concatenate([rct_id, prd_id]))
                     delList = np.append(delList, list(map(str, realBoundaryIdsInd)))
@@ -297,7 +297,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                         inhib_id = []
                         regType = ng.RegulationType.DEFAULT
                     else:
-                        reg_id = np.random.choice(np.delete(np.arange(ns), delList), size=2)
+                        reg_id = np.random.choice(cList, size=2)
                         if reg_id[0] == reg_id[1]:
                             act_id = []
                             inhib_id = []
@@ -344,7 +344,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                         inhib_id = []
                         regType = ng.RegulationType.DEFAULT
                     else:
-                        inhib_id = np.random.choice(np.delete(np.arange(ns), cList), size=1).tolist()
+                        inhib_id = np.random.choice(cList, size=1).tolist()
                 elif regType == ng.RegulationType.ACTIVATION:
                     inhib_id = []
                     delList = np.unique(np.concatenate([rct_id, prd_id]))
@@ -354,7 +354,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                         act_id = []
                         regType = ng.RegulationType.DEFAULT
                     else:
-                        act_id = np.random.choice(np.delete(np.arange(ns), delList), size=1).tolist()
+                        act_id = np.random.choice(cList, size=1).tolist()
                 else:
                     delList = np.unique(np.concatenate([rct_id, prd_id]))
                     delList = np.append(delList, list(map(str, realBoundaryIdsInd)))
@@ -364,7 +364,7 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
                         inhib_id = []
                         regType = ng.RegulationType.DEFAULT
                     else:
-                        reg_id = np.random.choice(np.delete(np.arange(ns), delList), size=2)
+                        reg_id = np.random.choice(cList, size=2)
                         if reg_id[0] == reg_id[1]:
                             act_id = []
                             inhib_id = []

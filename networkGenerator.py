@@ -118,7 +118,7 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     inhib_id = []
                     regType = RegulationType.DEFAULT
                 else:
-                    inhib_id = np.random.choice(np.delete(np.arange(nSpecies), cList), size=1).tolist()
+                    inhib_id = np.random.choice(cList, size=1).tolist()
             elif regType == RegulationType.ACTIVATION:
                 inhib_id = []
                 delList = np.unique(np.concatenate([rct_id, prd_id]))
@@ -128,7 +128,7 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     act_id = []
                     regType = RegulationType.DEFAULT
                 else:
-                    act_id = np.random.choice(np.delete(np.arange(nSpecies), delList), size=1).tolist()
+                    act_id = np.random.choice(cList, size=1).tolist()
             else:
                 delList = np.unique(np.concatenate([rct_id, prd_id]))
                 delList = np.append(delList, list(map(str, boundaryIdx)))
@@ -138,7 +138,7 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     inhib_id = []
                     regType = RegulationType.DEFAULT
                 else:
-                    reg_id = np.random.choice(np.delete(np.arange(nSpecies), delList), size=2)
+                    reg_id = np.random.choice(cList, size=2)
                     if reg_id[0] == reg_id[1]:
                         act_id = []
                         inhib_id = []
@@ -187,7 +187,7 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     inhib_id = []
                     regType = RegulationType.DEFAULT
                 else:
-                    inhib_id = np.random.choice(np.delete(np.arange(nSpecies), cList), size=1).tolist()
+                    inhib_id = np.random.choice(cList, size=1).tolist()
             elif regType == RegulationType.ACTIVATION:
                 inhib_id = []
                 delList = np.unique(np.concatenate([rct_id, prd_id]))
@@ -197,7 +197,7 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     act_id = []
                     regType = RegulationType.DEFAULT
                 else:
-                    act_id = np.random.choice(np.delete(np.arange(nSpecies), delList), size=1).tolist()
+                    act_id = np.random.choice(cList, size=1).tolist()
             else:
                 delList = np.unique(np.concatenate([rct_id, prd_id]))
                 delList = np.append(delList, list(map(str, boundaryIdx)))
@@ -207,7 +207,7 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     inhib_id = []
                     regType = RegulationType.DEFAULT
                 else:
-                    reg_id = np.random.choice(np.delete(np.arange(nSpecies), delList), size=2)
+                    reg_id = np.random.choice(cList, size=2)
                     if reg_id[0] == reg_id[1]:
                         act_id = []
                         inhib_id = []
@@ -256,7 +256,7 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     inhib_id = []
                     regType = RegulationType.DEFAULT
                 else:
-                    inhib_id = np.random.choice(np.delete(np.arange(nSpecies), cList), size=1).tolist()
+                    inhib_id = np.random.choice(cList, size=1).tolist()
             elif regType == RegulationType.ACTIVATION:
                 inhib_id = []
                 delList = np.unique(np.concatenate([rct_id, prd_id]))
@@ -266,7 +266,7 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     act_id = []
                     regType = RegulationType.DEFAULT
                 else:
-                    act_id = np.random.choice(np.delete(np.arange(nSpecies), delList), size=1).tolist()
+                    act_id = np.random.choice(cList, size=1).tolist()
             else:
                 delList = np.unique(np.concatenate([rct_id, prd_id]))
                 delList = np.append(delList, list(map(str, boundaryIdx)))
@@ -276,7 +276,7 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     inhib_id = []
                     regType = RegulationType.DEFAULT
                 else:
-                    reg_id = np.random.choice(np.delete(np.arange(nSpecies), delList), size=2)
+                    reg_id = np.random.choice(cList, size=2)
                     if reg_id[0] == reg_id[1]:
                         act_id = []
                         inhib_id = []
@@ -327,7 +327,7 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     inhib_id = []
                     regType = RegulationType.DEFAULT
                 else:
-                    inhib_id = np.random.choice(np.delete(np.arange(nSpecies), cList), size=1).tolist()
+                    inhib_id = np.random.choice(cList, size=1).tolist()
             elif regType == RegulationType.ACTIVATION:
                 inhib_id = []
                 delList = np.unique(np.concatenate([rct_id, prd_id]))
@@ -337,7 +337,7 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     act_id = []
                     regType = RegulationType.DEFAULT
                 else:
-                    act_id = np.random.choice(np.delete(np.arange(nSpecies), delList), size=1).tolist()
+                    act_id = np.random.choice(cList, size=1).tolist()
             else:
                 delList = np.unique(np.concatenate([rct_id, prd_id]))
                 delList = np.append(delList, list(map(str, boundaryIdx)))
@@ -347,7 +347,7 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     inhib_id = []
                     regType = RegulationType.DEFAULT
                 else:
-                    reg_id = np.random.choice(np.delete(np.arange(nSpecies), delList), size=2)
+                    reg_id = np.random.choice(cList, size=2)
                     if reg_id[0] == reg_id[1]:
                         act_id = []
                         inhib_id = []
