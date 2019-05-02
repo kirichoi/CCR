@@ -643,15 +643,15 @@ if __name__ == '__main__':
     # Test models =============================================================
     
     # 'FFL', 'Linear', 'Nested', 'Branched'
-    modelType = 'Full1' 
+    modelType = 'FFL_m' 
     
     
     # General settings ========================================================
     
     # Number of generations
-    n_gen = 500
+    n_gen = 300
     # Size of output ensemble
-    ens_size = 200
+    ens_size = 100
     # Number of models passed on the next generation without mutation
     pass_size = int(ens_size/10)
     # Number of models to mutate
@@ -705,7 +705,7 @@ if __name__ == '__main__':
     # Flag for saving current settings
     EXPORT_SETTINGS = False
     # Path to save the output
-    EXPORT_PATH = './USE/output_Full1_3'
+    EXPORT_PATH = './USE/output_FFL_m_update'
     
     # Flag to run algorithm
     RUN = True
@@ -904,10 +904,10 @@ if __name__ == '__main__':
         
         minInd, log_dens = analysis.selectWithKernalDensity(model_top, dist_top)
         if len(minInd[0]) == 0:
-            minInd = np.array([[len(model_top) - 1]])
+            minInd = np.array([[len(model_top)]])
                 
         if EXPORT_ALL_MODELS:
-            minInd = np.array([[len(model_top) - 1]])
+            minInd = np.array([[len(model_top)]])
         
         model_col = model_top[:minInd[0][0]]
         dist_col = dist_top[:minInd[0][0]]
