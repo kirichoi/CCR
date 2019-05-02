@@ -649,7 +649,7 @@ if __name__ == '__main__':
     # General settings ========================================================
     
     # Number of generations
-    n_gen = 300
+    n_gen = 100
     # Size of output ensemble
     ens_size = 100
     # Number of models passed on the next generation without mutation
@@ -715,8 +715,8 @@ if __name__ == '__main__':
         roadrunner.Config.setValue(roadrunner.Config.LOADSBMLOPTIONS_CONSERVED_MOIETIES, True)
     
     roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX, True)
-    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_MAX_STEPS, 15)
-    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TIME, 10000)
+    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_MAX_STEPS, 100)
+    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TIME, 1000000)
 #    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TOL, 1e-3)
         
     # Using one of the test models
@@ -904,13 +904,13 @@ if __name__ == '__main__':
         
         minInd, log_dens = analysis.selectWithKernalDensity(model_top, dist_top)
         if len(minInd[0]) == 0:
-            minInd = np.array([[len(model_top)]])
+            minInd = np.array([[len(model_top) - 1]])
                 
         if EXPORT_ALL_MODELS:
-            minInd = np.array([[len(model_top)]])
+            minInd = np.array([[len(model_top) - 1]])
         
-        model_col = model_top[:minInd[0][0]]
-        dist_col = dist_top[:minInd[0][0]]
+        model_col = model_top[:minInd[0][0] + 1]
+        dist_col = dist_top[:minInd[0][0] + 1]
             
     #%%
         EXPORT_PATH = os.path.abspath(os.path.join(os.getcwd(), EXPORT_PATH))
