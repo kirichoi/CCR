@@ -112,7 +112,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
             elif regType == RegulationType.INHIBITION:
                 act_id = []
                 delList = np.concatenate([rct_id, prd_id])
-                delList = np.unique(np.append(delList, boundaryIdx))
+                if len(boundaryIdx) > 0:
+                    delList = np.unique(np.append(delList, boundaryIdx))
                 cList = np.delete(np.arange(nSpecies), delList)
                 if len(cList) == 0:
                     inhib_id = []
@@ -122,7 +123,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
             elif regType == RegulationType.ACTIVATION:
                 inhib_id = []
                 delList = np.concatenate([rct_id, prd_id])
-                delList = np.unique(np.append(delList, boundaryIdx))
+                if len(boundaryIdx) > 0:
+                    delList = np.unique(np.append(delList, boundaryIdx))
                 cList = np.delete(np.arange(nSpecies), delList)
                 if len(cList) == 0:
                     act_id = []
@@ -131,7 +133,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     act_id = np.random.choice(cList, size=1).tolist()
             else:
                 delList = np.concatenate([rct_id, prd_id])
-                delList = np.unique(np.append(delList, boundaryIdx))
+                if len(boundaryIdx) > 0:
+                    delList = np.unique(np.append(delList, boundaryIdx))
                 cList = np.delete(np.arange(nSpecies), delList)
                 if len(cList) < 2:
                     act_id = []
@@ -176,7 +179,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
             elif regType == RegulationType.INHIBITION:
                 act_id = []
                 delList = np.concatenate([rct_id, prd_id])
-                delList = np.unique(np.append(delList, boundaryIdx))
+                if len(boundaryIdx) > 0:
+                    delList = np.unique(np.append(delList, boundaryIdx))
                 cList = np.delete(np.arange(nSpecies), delList)
                 if len(cList) == 0:
                     inhib_id = []
@@ -186,7 +190,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
             elif regType == RegulationType.ACTIVATION:
                 inhib_id = []
                 delList = np.concatenate([rct_id, prd_id])
-                delList = np.unique(np.append(delList, boundaryIdx))
+                if len(boundaryIdx) > 0:
+                    delList = np.unique(np.append(delList, boundaryIdx))
                 cList = np.delete(np.arange(nSpecies), delList)
                 if len(cList) == 0:
                     act_id = []
@@ -195,7 +200,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     act_id = np.random.choice(cList, size=1).tolist()
             else:
                 delList = np.concatenate([rct_id, prd_id])
-                delList = np.unique(np.append(delList, boundaryIdx))
+                if len(boundaryIdx) > 0:
+                    delList = np.unique(np.append(delList, boundaryIdx))
                 cList = np.delete(np.arange(nSpecies), delList)
                 if len(cList) < 2:
                     act_id = []
@@ -240,7 +246,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
             elif regType == RegulationType.INHIBITION:
                 act_id = []
                 delList = np.concatenate([rct_id, prd_id])
-                delList = np.unique(np.append(delList, boundaryIdx))
+                if len(boundaryIdx) > 0:
+                    delList = np.unique(np.append(delList, boundaryIdx))
                 cList = np.delete(np.arange(nSpecies), delList)
                 if len(cList) == 0:
                     inhib_id = []
@@ -250,7 +257,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
             elif regType == RegulationType.ACTIVATION:
                 inhib_id = []
                 delList = np.concatenate([rct_id, prd_id])
-                delList = np.unique(np.append(delList, boundaryIdx))
+                if len(boundaryIdx) > 0:
+                    delList = np.unique(np.append(delList, boundaryIdx))
                 cList = np.delete(np.arange(nSpecies), delList)
                 if len(cList) == 0:
                     act_id = []
@@ -259,7 +267,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     act_id = np.random.choice(cList, size=1).tolist()
             else:
                 delList = np.concatenate([rct_id, prd_id])
-                delList = np.unique(np.append(delList, boundaryIdx))
+                if len(boundaryIdx) > 0:
+                    delList = np.unique(np.append(delList, boundaryIdx))
                 cList = np.delete(np.arange(nSpecies), delList)
                 if len(cList) < 2:
                     act_id = []
@@ -306,7 +315,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
             elif regType == RegulationType.INHIBITION:
                 act_id = []
                 delList = np.concatenate([rct_id, prd_id])
-                delList = np.unique(np.append(delList, boundaryIdx))
+                if len(boundaryIdx) > 0:
+                    delList = np.unique(np.append(delList, boundaryIdx))
                 cList = np.delete(np.arange(nSpecies), delList)
                 if len(cList) == 0:
                     inhib_id = []
@@ -316,7 +326,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
             elif regType == RegulationType.ACTIVATION:
                 inhib_id = []
                 delList = np.concatenate([rct_id, prd_id])
-                delList = np.unique(np.append(delList, boundaryIdx))
+                if len(boundaryIdx) > 0:
+                    delList = np.unique(np.append(delList, boundaryIdx))
                 cList = np.delete(np.arange(nSpecies), delList)
                 if len(cList) == 0:
                     act_id = []
@@ -325,7 +336,8 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
                     act_id = np.random.choice(cList, size=1).tolist()
             else:
                 delList = np.concatenate([rct_id, prd_id])
-                delList = np.unique(np.append(delList, boundaryIdx))
+                if len(boundaryIdx) > 0:
+                    delList = np.unique(np.append(delList, boundaryIdx))
                 cList = np.delete(np.arange(nSpecies), delList)
                 if len(cList) < 2:
                     act_id = []
