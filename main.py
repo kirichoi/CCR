@@ -70,9 +70,6 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
     eval_rl = np.empty(mut_size, dtype='object')
     
     for m in mut_range:
-        antimony.loadAntimonyString(listantStr[m])
-        module = antimony.getModuleNames()[-1]
-        
         r = te.loada(listantStr[m])
         
         r.steadyStateApproximate()
@@ -89,286 +86,129 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
         
         o = 0
         
-#        connected = False
-    
         while ((stt[1] != realFloatingIdsInd or stt[2] != realBoundaryIdsInd or
                 reactionList in rl_track) and (o < maxIter_mut)):
-            rct = []
-            rcttuple = antimony.getReactantNames(module)
-            for rcti in range(len(rcttuple)):
-                rct_temp = []
-                for rctj in range(len(rcttuple[rcti])):
-                    rct_temp.append(int(rcttuple[rcti][rctj][1:]))
-                rct.append(rct_temp)
-            
-            prd = []
-            prdtuple = antimony.getProductNames(module)
-            for prdi in range(len(prdtuple)):
-                prd_temp = []
-                for prdj in range(len(prdtuple[prdi])):
-                    prd_temp.append(int(prdtuple[prdi][prdj][1:]))
-                prd.append(prd_temp)
-            
             r_idx = np.random.choice(np.arange(nr), 
                                      p=np.divide(tempdiff,np.sum(tempdiff)))
             posRctInd = np.append(np.array(realFloatingIdsInd)[np.where(
                         np.abs(realConcCC[:,r_idx]) > 1e-12)[0]], np.array(realBoundaryIdsInd)).astype(int)
-            rType, regType, revType = ng.pickReactionType()
+            
             reactionList = copy.deepcopy(listrl[m])
             
+            rct = [col[3] for col in reactionList]
+            prd = [col[4] for col in reactionList]
+            
+            rType, regType, revType = ng.pickReactionType()
+            
+            # TODO: pick reactants and products based on control coefficients
             if rType == ng.ReactionType.UNIUNI:
-                # TODO: pick reactants and products based on control coefficients
                 # UniUni
-                rct_id = np.random.choice(posRctInd, size=1)
-                prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
-                all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
-                all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
+                rct_id = np.random.choice(posRctInd, size=1).tolist()
+                prd_id = np.random.choice(np.delete(nsList, rct_id), size=1).tolist()
+                all_rct = [i for i,x in enumerate(rct) if x==rct_id]
+                all_prd = [i for i,x in enumerate(prd) if x==prd_id]
                 
                 while (((np.any(np.isin(rct_id, realBoundaryIdsInd))) and 
-                       (np.any(np.isin(prd_id, realBoundaryIdsInd)))) or
+                       (np.any(np.isin(prd_id, realBoundaryIdsInd)))) or 
                        (len(set(all_rct) & set(all_prd)) > 0)):
-                    rct_id = np.random.choice(posRctInd, size=1)
-                    prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
+                    rct_id = np.random.choice(posRctInd, size=1).tolist()
+                    prd_id = np.random.choice(np.delete(nsList, rct_id), size=1).tolist()
                     # Search for potentially identical reactions
-                    all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
-                    all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
-                    
-                if regType == ng.RegulationType.DEFAULT:
-                    act_id = []
-                    inhib_id = []
-                elif regType == ng.RegulationType.INHIBITION:
-                    act_id = []
-                    delList = np.concatenate([rct_id, prd_id])
-                    if len(realBoundaryIdsInd) > 0:
-                        delList = np.unique(np.append(delList, realBoundaryIdsInd))
-                    cList = np.delete(np.arange(ns), delList)
-                    if len(cList) == 0:
-                        inhib_id = []
-                        regType = ng.RegulationType.DEFAULT
-                    else:
-                        inhib_id = np.random.choice(cList, size=1).tolist()
-                elif regType == ng.RegulationType.ACTIVATION:
-                    inhib_id = []
-                    delList = np.concatenate([rct_id, prd_id])
-                    if len(realBoundaryIdsInd) > 0:
-                        delList = np.unique(np.append(delList, realBoundaryIdsInd))
-                    cList = np.delete(np.arange(ns), delList)
-                    if len(cList) == 0:
-                        act_id = []
-                        regType = ng.RegulationType.DEFAULT
-                    else:
-                        act_id = np.random.choice(cList, size=1).tolist()
-                else:
-                    delList = np.concatenate([rct_id, prd_id])
-                    if len(realBoundaryIdsInd) > 0:
-                        delList = np.unique(np.append(delList, realBoundaryIdsInd))
-                    cList = np.delete(np.arange(ns), delList)
-                    if len(cList) < 2:
-                        act_id = []
-                        inhib_id = []
-                        regType = ng.RegulationType.DEFAULT
-                    else:
-                        reg_id = np.random.choice(cList, size=2, replace=False)
-                        act_id = [reg_id[0]]
-                        inhib_id = [reg_id[1]]
-                
-                reactionList[r_idx] = [rType, regType, revType, 
-                                       [rct_id[0]], [prd_id[0]], 
-                                       act_id, inhib_id]
-                
+                    all_rct = [i for i,x in enumerate(rct) if x==rct_id]
+                    all_prd = [i for i,x in enumerate(prd) if x==prd_id]
             elif rType == ng.ReactionType.BIUNI:
                 # BiUni
-                rct_id = np.random.choice(posRctInd, size=2, replace=True)
-                prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
-                all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                                       rct_id[1]] or x == [rct_id[1], rct_id[0]]]
-                all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
+                rct_id = np.random.choice(posRctInd, size=2, replace=True).tolist()
+                prd_id = np.random.choice(np.delete(nsList, rct_id), size=1).tolist()
+                all_rct = [i for i,x in enumerate(rct) if set(x)==set(rct_id)]
+                all_prd = [i for i,x in enumerate(prd) if x==prd_id]
                 
                 while (((np.any(np.isin(rct_id, realBoundaryIdsInd))) and 
-                       (np.any(np.isin(prd_id, realBoundaryIdsInd)))) or
+                       (np.any(np.isin(prd_id, realBoundaryIdsInd)))) or 
                        (len(set(all_rct) & set(all_prd)) > 0)):
-                    rct_id = np.random.choice(posRctInd, size=2, replace=True)
-                    # pick a product but only products that don't include the reactants
-                    prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=1)
-                    
+                    rct_id = np.random.choice(posRctInd, size=2, replace=True).tolist()
+                    prd_id = np.random.choice(np.delete(nsList, rct_id), size=1).tolist()
                     # Search for potentially identical reactions
-                    all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                                       rct_id[1]] or x == [rct_id[1], rct_id[0]]]
-                    all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
-                    
-                if regType == ng.RegulationType.DEFAULT:
-                    act_id = []
-                    inhib_id = []
-                elif regType == ng.RegulationType.INHIBITION:
-                    act_id = []
-                    delList = np.concatenate([rct_id, prd_id])
-                    if len(realBoundaryIdsInd) > 0:
-                        delList = np.unique(np.append(delList, realBoundaryIdsInd))
-                    cList = np.delete(np.arange(ns), delList)
-                    if len(cList) == 0:
-                        inhib_id = []
-                        regType = ng.RegulationType.DEFAULT
-                    else:
-                        inhib_id = np.random.choice(cList, size=1).tolist()
-                elif regType == ng.RegulationType.ACTIVATION:
-                    inhib_id = []
-                    delList = np.concatenate([rct_id, prd_id])
-                    if len(realBoundaryIdsInd) > 0:
-                        delList = np.unique(np.append(delList, realBoundaryIdsInd))
-                    cList = np.delete(np.arange(ns), delList)
-                    if len(cList) == 0:
-                        act_id = []
-                        regType = ng.RegulationType.DEFAULT
-                    else:
-                        act_id = np.random.choice(cList, size=1).tolist()
-                else:
-                    delList = np.concatenate([rct_id, prd_id])
-                    if len(realBoundaryIdsInd) > 0:
-                        delList = np.unique(np.append(delList, realBoundaryIdsInd))
-                    cList = np.delete(np.arange(ns), delList)
-                    if len(cList) < 2:
-                        act_id = []
-                        inhib_id = []
-                        regType = ng.RegulationType.DEFAULT
-                    else:
-                        reg_id = np.random.choice(cList, size=2, replace=False)
-                        act_id = [reg_id[0]]
-                        inhib_id = [reg_id[1]]
-                
-                reactionList[r_idx] = [rType, regType, revType,
-                                       [rct_id[0], rct_id[1]], [prd_id[0]], 
-                                       act_id, inhib_id]
-                
-                
+                    all_rct = [i for i,x in enumerate(rct) if set(x)==set(rct_id)]
+                    all_prd = [i for i,x in enumerate(prd) if x==prd_id]
             elif rType == ng.ReactionType.UNIBI:
                 # UniBi
-                rct_id = np.random.choice(posRctInd, size=1)
-                prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2, replace=True)
-                all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
-                all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                                       prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+                rct_id = np.random.choice(posRctInd, size=1).tolist()
+                prd_id = np.random.choice(np.delete(nsList, rct_id), size=2, replace=True).tolist()
+                all_rct = [i for i,x in enumerate(rct) if x==rct_id]
+                all_prd = [i for i,x in enumerate(prd) if set(x)==set(prd_id)]
                 
                 while (((np.any(np.isin(rct_id, realBoundaryIdsInd))) and 
-                       (np.any(np.isin(prd_id, realBoundaryIdsInd)))) or
+                       (np.any(np.isin(prd_id, realBoundaryIdsInd)))) or 
                        (len(set(all_rct) & set(all_prd)) > 0)):
-                    rct_id = np.random.choice(posRctInd, size=1)
-                    # pick a product but only products that don't include the reactant
-                    prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2, replace=True)
-                    
+                    rct_id = np.random.choice(posRctInd, size=1).tolist()
+                    prd_id = np.random.choice(np.delete(nsList, rct_id), size=2, replace=True).tolist()
                     # Search for potentially identical reactions
-                    all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
-                    all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                                       prd_id[1]] or x == [prd_id[1], prd_id[0]]]
-                    
-                if regType == ng.RegulationType.DEFAULT:
-                    act_id = []
-                    inhib_id = []
-                elif regType == ng.RegulationType.INHIBITION:
-                    act_id = []
-                    delList = np.concatenate([rct_id, prd_id])
-                    if len(realBoundaryIdsInd) > 0:
-                        delList = np.unique(np.append(delList, realBoundaryIdsInd))
-                    cList = np.delete(np.arange(ns), delList)
-                    if len(cList) == 0:
-                        inhib_id = []
-                        regType = ng.RegulationType.DEFAULT
-                    else:
-                        inhib_id = np.random.choice(cList, size=1).tolist()
-                elif regType == ng.RegulationType.ACTIVATION:
-                    inhib_id = []
-                    delList = np.concatenate([rct_id, prd_id])
-                    if len(realBoundaryIdsInd) > 0:
-                        delList = np.unique(np.append(delList, realBoundaryIdsInd))
-                    cList = np.delete(np.arange(ns), delList)
-                    if len(cList) == 0:
-                        act_id = []
-                        regType = ng.RegulationType.DEFAULT
-                    else:
-                        act_id = np.random.choice(cList, size=1).tolist()
-                else:
-                    delList = np.concatenate([rct_id, prd_id])
-                    if len(realBoundaryIdsInd) > 0:
-                        delList = np.unique(np.append(delList, realBoundaryIdsInd))
-                    cList = np.delete(np.arange(ns), delList)
-                    if len(cList) < 2:
-                        act_id = []
-                        inhib_id = []
-                        regType = ng.RegulationType.DEFAULT
-                    else:
-                        reg_id = np.random.choice(cList, size=2, replace=False)
-                        act_id = [reg_id[0]]
-                        inhib_id = [reg_id[1]]
-                        
-                reactionList[r_idx] = [rType, regType, revType,
-                                       [rct_id[0]], [prd_id[0], prd_id[1]], 
-                                       act_id, inhib_id]
-                
+                    all_rct = [i for i,x in enumerate(rct) if x==rct_id]
+                    all_prd = [i for i,x in enumerate(prd) if set(x)==set(prd_id)]
             else:
                 # BiBi
-                rct_id = np.random.choice(posRctInd, size=2, replace=True)
-                prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2, replace=True)
-                all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                                       rct_id[1]] or x == [rct_id[1], rct_id[0]]]
-                all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                                       prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+                rct_id = np.random.choice(posRctInd, size=2, replace=True).tolist()
+                prd_id = np.random.choice(np.delete(nsList, rct_id), size=2, replace=True).tolist()
+                all_rct = [i for i,x in enumerate(rct) if set(x)==set(rct_id)]
+                all_prd = [i for i,x in enumerate(prd) if set(x)==set(prd_id)]
                 
                 while (((np.any(np.isin(rct_id, realBoundaryIdsInd))) and 
                        (np.any(np.isin(prd_id, realBoundaryIdsInd)))) or
                        (len(set(all_rct) & set(all_prd)) > 0)):
-                    rct_id = np.random.choice(posRctInd, size=2, replace=True)
-                    # pick a product but only products that don't include the reactant
-                    prd_id = np.random.choice(np.delete(np.arange(ns), rct_id), size=2, replace=True)
-                    
+                    rct_id = np.random.choice(posRctInd, size=2, replace=True).tolist()
+                    prd_id = np.random.choice(np.delete(nsList, rct_id), size=2, replace=True).tolist()
                     # Search for potentially identical reactions
-                    all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                                       rct_id[1]] or x == [rct_id[1], rct_id[0]]]
-                    all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                                       prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+                    all_rct = [i for i,x in enumerate(rct) if set(x)==set(rct_id)]
+                    all_prd = [i for i,x in enumerate(prd) if set(x)==set(prd_id)]
                     
-                if regType == ng.RegulationType.DEFAULT:
-                    act_id = []
+            if regType == ng.RegulationType.DEFAULT:
+                act_id = []
+                inhib_id = []
+            elif regType == ng.RegulationType.INHIBITION:
+                act_id = []
+                delList = np.concatenate([rct_id, prd_id])
+                if len(realBoundaryIdsInd) > 0:
+                    delList = np.unique(np.append(delList, realBoundaryIdsInd))
+                cList = np.delete(nsList, delList)
+                if len(cList) == 0:
                     inhib_id = []
-                elif regType == ng.RegulationType.INHIBITION:
-                    act_id = []
-                    delList = np.concatenate([rct_id, prd_id])
-                    if len(realBoundaryIdsInd) > 0:
-                        delList = np.unique(np.append(delList, realBoundaryIdsInd))
-                    cList = np.delete(np.arange(ns), delList)
-                    if len(cList) == 0:
-                        inhib_id = []
-                        regType = ng.RegulationType.DEFAULT
-                    else:
-                        inhib_id = np.random.choice(cList, size=1).tolist()
-                elif regType == ng.RegulationType.ACTIVATION:
-                    inhib_id = []
-                    delList = np.concatenate([rct_id, prd_id])
-                    if len(realBoundaryIdsInd) > 0:
-                        delList = np.unique(np.append(delList, realBoundaryIdsInd))
-                    cList = np.delete(np.arange(ns), delList)
-                    if len(cList) == 0:
-                        act_id = []
-                        regType = ng.RegulationType.DEFAULT
-                    else:
-                        act_id = np.random.choice(cList, size=1).tolist()
+                    regType = ng.RegulationType.DEFAULT
                 else:
-                    delList = np.concatenate([rct_id, prd_id])
-                    if len(realBoundaryIdsInd) > 0:
-                        delList = np.unique(np.append(delList, realBoundaryIdsInd))
-                    cList = np.delete(np.arange(ns), delList)
-                    if len(cList) < 2:
-                        act_id = []
-                        inhib_id = []
-                        regType = ng.RegulationType.DEFAULT
-                    else:
-                        reg_id = np.random.choice(cList, size=2, replace=False)
-                        act_id = [reg_id[0]]
-                        inhib_id = [reg_id[1]]
+                    inhib_id = np.random.choice(cList, size=1).tolist()
+            elif regType == ng.RegulationType.ACTIVATION:
+                inhib_id = []
+                delList = np.concatenate([rct_id, prd_id])
+                if len(realBoundaryIdsInd) > 0:
+                    delList = np.unique(np.append(delList, realBoundaryIdsInd))
+                cList = np.delete(nsList, delList)
+                if len(cList) == 0:
+                    act_id = []
+                    regType = ng.RegulationType.DEFAULT
+                else:
+                    act_id = np.random.choice(cList, size=1).tolist()
+            else:
+                delList = np.concatenate([rct_id, prd_id])
+                if len(realBoundaryIdsInd) > 0:
+                    delList = np.unique(np.append(delList, realBoundaryIdsInd))
+                cList = np.delete(nsList, delList)
+                if len(cList) < 2:
+                    act_id = []
+                    inhib_id = []
+                    regType = ng.RegulationType.DEFAULT
+                else:
+                    reg_id = np.random.choice(cList, size=2, replace=False)
+                    act_id = [reg_id[0]]
+                    inhib_id = [reg_id[1]]
                 
-                reactionList[r_idx] = [rType, regType, revType,
-                                       [rct_id[0], rct_id[1]], [prd_id[0], prd_id[1]], 
-                                       act_id, inhib_id]
-                
-#            connected = analysis.isConnected(reactionList)
+            reactionList[r_idx] = [rType, 
+                                   regType, 
+                                   revType, 
+                                   rct_id, 
+                                   prd_id, 
+                                   act_id, 
+                                   inhib_id]
+            
             st = ng.getFullStoichiometryMatrix(reactionList, ns).tolist()
             stt = ng.removeBoundaryNodes(np.array(st))
             o += 1
@@ -654,14 +494,15 @@ if __name__ == '__main__':
     
     # Test models =============================================================
     
-    # 'FFL', 'Linear', 'Nested', 'Branched'
-    modelType = 'Full1' 
+    # 'FFL_m', 'Linear_m', 'Nested_m', 'Branched_m', 'sigPath'
+    # 'FFL_r', 'Linear_r', 'Nested_r', 'Branched_r'
+    modelType = 'Nested_m' 
     
     
     # General settings ========================================================
     
     # Number of generations
-    n_gen = 500
+    n_gen = 1000
     # Size of output ensemble
     ens_size = 100
     # Number of models passed on the next generation without mutation
@@ -673,7 +514,7 @@ if __name__ == '__main__':
     # Maximum iteration allowed for mutation
     maxIter_mut = 20
     # Set conserved moiety
-    conservedMoiety = True
+    conservedMoiety = False
     
     
     # Optimizer settings ======================================================
@@ -717,7 +558,7 @@ if __name__ == '__main__':
     # Flag for saving current settings
     EXPORT_SETTINGS = False
     # Path to save the output
-    EXPORT_PATH = './USE/output_Full1_update_cm'
+    EXPORT_PATH = './USE/output_Nested_m_u3'
     
     # Flag to run algorithm
     RUN = True
@@ -727,7 +568,7 @@ if __name__ == '__main__':
         roadrunner.Config.setValue(roadrunner.Config.LOADSBMLOPTIONS_CONSERVED_MOIETIES, True)
     
     roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX, True)
-    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_MAX_STEPS, 100)
+    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_MAX_STEPS, 5)
     roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TIME, 1000000)
 #    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TOL, 1e-3)
         
@@ -777,6 +618,7 @@ if __name__ == '__main__':
     
     # Number of Species and Ranges
     ns = realNumBoundary + realNumFloating # Number of species
+    nsList = np.arange(ns)
     nr = realRR.getNumReactions() # Number of reactions
     
     n_range = range(1, n_gen)

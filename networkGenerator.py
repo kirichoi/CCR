@@ -29,10 +29,10 @@ class RP:
     BiBI  = 0.05
     
 class RLP:
-    Default = 0.73
+    Default = 0.75
     Inhib = 0.12
     Activ = 0.12
-    Inhibactiv = 0.03
+    Inhibactiv = 0.01
     
 class REVP:
     Irreversible = 1.
@@ -83,7 +83,9 @@ def pickReactionType():
 # reaction = [reactionType, [list of reactants], [list of product], rateConstant]
 def generateReactionList(nSpecies, nReactions, boundaryIdx):
 
+    nsList = np.arange(nSpecies)
     reactionList = []
+    
     for r_idx in range(nReactions):
         rct = [col[3] for col in reactionList]
         prd = [col[4] for col in reactionList]
@@ -92,270 +94,112 @@ def generateReactionList(nSpecies, nReactions, boundaryIdx):
         
         if rType == ReactionType.UNIUNI:
             # UniUni
-            rct_id = np.random.choice(np.arange(nSpecies), size=1)
-            prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
-            all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
-            all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
+            rct_id = np.random.choice(nsList, size=1).tolist()
+            prd_id = np.random.choice(np.delete(nsList, rct_id), size=1).tolist()
+            all_rct = [i for i,x in enumerate(rct) if x==rct_id]
+            all_prd = [i for i,x in enumerate(prd) if x==prd_id]
             
             while (((np.any(np.isin(rct_id, boundaryIdx))) and 
                    (np.any(np.isin(prd_id, boundaryIdx)))) or 
                    (len(set(all_rct) & set(all_prd)) > 0)):
-                rct_id = np.random.choice(np.arange(nSpecies), size=1)
-                prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
+                rct_id = np.random.choice(nsList, size=1).tolist()
+                prd_id = np.random.choice(np.delete(nsList, rct_id), size=1).tolist()
                 # Search for potentially identical reactions
-                all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
-                all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
-                
-            if regType == RegulationType.DEFAULT:
-                act_id = []
-                inhib_id = []
-            elif regType == RegulationType.INHIBITION:
-                act_id = []
-                delList = np.concatenate([rct_id, prd_id])
-                if len(boundaryIdx) > 0:
-                    delList = np.unique(np.append(delList, boundaryIdx))
-                cList = np.delete(np.arange(nSpecies), delList)
-                if len(cList) == 0:
-                    inhib_id = []
-                    regType = RegulationType.DEFAULT
-                else:
-                    inhib_id = np.random.choice(cList, size=1).tolist()
-            elif regType == RegulationType.ACTIVATION:
-                inhib_id = []
-                delList = np.concatenate([rct_id, prd_id])
-                if len(boundaryIdx) > 0:
-                    delList = np.unique(np.append(delList, boundaryIdx))
-                cList = np.delete(np.arange(nSpecies), delList)
-                if len(cList) == 0:
-                    act_id = []
-                    regType = RegulationType.DEFAULT
-                else:
-                    act_id = np.random.choice(cList, size=1).tolist()
-            else:
-                delList = np.concatenate([rct_id, prd_id])
-                if len(boundaryIdx) > 0:
-                    delList = np.unique(np.append(delList, boundaryIdx))
-                cList = np.delete(np.arange(nSpecies), delList)
-                if len(cList) < 2:
-                    act_id = []
-                    inhib_id = []
-                    regType = RegulationType.DEFAULT
-                else:
-                    reg_id = np.random.choice(cList, size=2, replace=False)
-                    act_id = [reg_id[0]]
-                    inhib_id = [reg_id[1]]
-                    
-            reactionList.append([rType, 
-                                 regType, 
-                                 revType, 
-                                 [rct_id[0]], 
-                                 [prd_id[0]], 
-                                 act_id, 
-                                 inhib_id])
-
+                all_rct = [i for i,x in enumerate(rct) if x==rct_id]
+                all_prd = [i for i,x in enumerate(prd) if x==prd_id]
         elif rType == ReactionType.BIUNI:
             # BiUni
-            rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
-            prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
-            all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                                   rct_id[1]] or x == [rct_id[1], rct_id[0]]]
-            all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
+            rct_id = np.random.choice(nsList, size=2, replace=True).tolist()
+            prd_id = np.random.choice(np.delete(nsList, rct_id), size=1).tolist()
+            all_rct = [i for i,x in enumerate(rct) if set(x)==set(rct_id)]
+            all_prd = [i for i,x in enumerate(prd) if x==prd_id]
             
             while (((np.any(np.isin(rct_id, boundaryIdx))) and 
                    (np.any(np.isin(prd_id, boundaryIdx)))) or 
                    (len(set(all_rct) & set(all_prd)) > 0)):
-                rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
-                # pick a product but only products that don't include the reactants
-                prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=1)
-                
+                rct_id = np.random.choice(nsList, size=2, replace=True).tolist()
+                prd_id = np.random.choice(np.delete(nsList, rct_id), size=1).tolist()
                 # Search for potentially identical reactions
-                all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                                   rct_id[1]] or x == [rct_id[1], rct_id[0]]]
-                all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0]]]
-                
-            if regType == RegulationType.DEFAULT:
-                act_id = []
-                inhib_id = []
-            elif regType == RegulationType.INHIBITION:
-                act_id = []
-                delList = np.concatenate([rct_id, prd_id])
-                if len(boundaryIdx) > 0:
-                    delList = np.unique(np.append(delList, boundaryIdx))
-                cList = np.delete(np.arange(nSpecies), delList)
-                if len(cList) == 0:
-                    inhib_id = []
-                    regType = RegulationType.DEFAULT
-                else:
-                    inhib_id = np.random.choice(cList, size=1).tolist()
-            elif regType == RegulationType.ACTIVATION:
-                inhib_id = []
-                delList = np.concatenate([rct_id, prd_id])
-                if len(boundaryIdx) > 0:
-                    delList = np.unique(np.append(delList, boundaryIdx))
-                cList = np.delete(np.arange(nSpecies), delList)
-                if len(cList) == 0:
-                    act_id = []
-                    regType = RegulationType.DEFAULT
-                else:
-                    act_id = np.random.choice(cList, size=1).tolist()
-            else:
-                delList = np.concatenate([rct_id, prd_id])
-                if len(boundaryIdx) > 0:
-                    delList = np.unique(np.append(delList, boundaryIdx))
-                cList = np.delete(np.arange(nSpecies), delList)
-                if len(cList) < 2:
-                    act_id = []
-                    inhib_id = []
-                    regType = RegulationType.DEFAULT
-                else:
-                    reg_id = np.random.choice(cList, size=2, replace=False)
-                    act_id = [reg_id[0]]
-                    inhib_id = [reg_id[1]]
-                        
-            reactionList.append([rType, 
-                                 regType, 
-                                 revType, 
-                                 [rct_id[0], rct_id[1]], 
-                                 [prd_id[0]], 
-                                 act_id, 
-                                 inhib_id]) 
-        
+                all_rct = [i for i,x in enumerate(rct) if set(x)==set(rct_id)]
+                all_prd = [i for i,x in enumerate(prd) if x==prd_id]
         elif rType == ReactionType.UNIBI:
             # UniBi
-            rct_id = np.random.choice(np.arange(nSpecies), size=1)
-            prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
-            all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
-            all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                                   prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+            rct_id = np.random.choice(nsList, size=1).tolist()
+            prd_id = np.random.choice(np.delete(nsList, rct_id), size=2, replace=True).tolist()
+            all_rct = [i for i,x in enumerate(rct) if x==rct_id]
+            all_prd = [i for i,x in enumerate(prd) if set(x)==set(prd_id)]
             
             while (((np.any(np.isin(rct_id, boundaryIdx))) and 
                    (np.any(np.isin(prd_id, boundaryIdx)))) or 
                    (len(set(all_rct) & set(all_prd)) > 0)):
-                rct_id = np.random.choice(np.arange(nSpecies), size=1)
-                # pick a product but only products that don't include the reactant
-                prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
-                
+                rct_id = np.random.choice(nsList, size=1).tolist()
+                prd_id = np.random.choice(np.delete(nsList, rct_id), size=2, replace=True).tolist()
                 # Search for potentially identical reactions
-                all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0]]]
-                all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                                   prd_id[1]] or x == [prd_id[1], prd_id[0]]]
-                
-            if regType == RegulationType.DEFAULT:
-                act_id = []
-                inhib_id = []
-            elif regType == RegulationType.INHIBITION:
-                act_id = []
-                delList = np.concatenate([rct_id, prd_id])
-                if len(boundaryIdx) > 0:
-                    delList = np.unique(np.append(delList, boundaryIdx))
-                cList = np.delete(np.arange(nSpecies), delList)
-                if len(cList) == 0:
-                    inhib_id = []
-                    regType = RegulationType.DEFAULT
-                else:
-                    inhib_id = np.random.choice(cList, size=1).tolist()
-            elif regType == RegulationType.ACTIVATION:
-                inhib_id = []
-                delList = np.concatenate([rct_id, prd_id])
-                if len(boundaryIdx) > 0:
-                    delList = np.unique(np.append(delList, boundaryIdx))
-                cList = np.delete(np.arange(nSpecies), delList)
-                if len(cList) == 0:
-                    act_id = []
-                    regType = RegulationType.DEFAULT
-                else:
-                    act_id = np.random.choice(cList, size=1).tolist()
-            else:
-                delList = np.concatenate([rct_id, prd_id])
-                if len(boundaryIdx) > 0:
-                    delList = np.unique(np.append(delList, boundaryIdx))
-                cList = np.delete(np.arange(nSpecies), delList)
-                if len(cList) < 2:
-                    act_id = []
-                    inhib_id = []
-                    regType = RegulationType.DEFAULT
-                else:
-                    reg_id = np.random.choice(cList, size=2, replace=False)
-                    act_id = [reg_id[0]]
-                    inhib_id = [reg_id[1]]
-            
-            reactionList.append ([rType, 
-                                  regType, 
-                                  revType,
-                                  [rct_id[0]], 
-                                  [prd_id[0], prd_id[1]], 
-                                  act_id, 
-                                  inhib_id]) 
-        
+                all_rct = [i for i,x in enumerate(rct) if x==rct_id]
+                all_prd = [i for i,x in enumerate(prd) if set(x)==set(prd_id)]
         else:
             # BiBi
-            rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
-            prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
-            all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                                   rct_id[1]] or x == [rct_id[1], rct_id[0]]]
-            all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                                   prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+            rct_id = np.random.choice(nsList, size=2, replace=True).tolist()
+            prd_id = np.random.choice(np.delete(nsList, rct_id), size=2, replace=True).tolist()
+            all_rct = [i for i,x in enumerate(rct) if set(x)==set(rct_id)]
+            all_prd = [i for i,x in enumerate(prd) if set(x)==set(prd_id)]
             
             while (((np.any(np.isin(rct_id, boundaryIdx))) and 
                    (np.any(np.isin(prd_id, boundaryIdx)))) or
                    (len(set(all_rct) & set(all_prd)) > 0)):
-                rct_id = np.random.choice(np.arange(nSpecies), size=2, replace=True)
-                # pick a product but only products that don't include the reactant
-                prd_id = np.random.choice(np.delete(np.arange(nSpecies), rct_id), size=2, replace=True)
-                
+                rct_id = np.random.choice(nsList, size=2, replace=True).tolist()
+                prd_id = np.random.choice(np.delete(nsList, rct_id), size=2, replace=True).tolist()
                 # Search for potentially identical reactions
-                all_rct = [i for i, x in enumerate(rct) if x == [rct_id[0],
-                                                   rct_id[1]] or x == [rct_id[1], rct_id[0]]]
-                all_prd = [i for i, x in enumerate(prd) if x == [prd_id[0],
-                                                   prd_id[1]] or x == [prd_id[1], prd_id[0]]]
+                all_rct = [i for i,x in enumerate(rct) if set(x)==set(rct_id)]
+                all_prd = [i for i,x in enumerate(prd) if set(x)==set(prd_id)]
                 
-            if regType == RegulationType.DEFAULT:
-                act_id = []
+        if regType == RegulationType.DEFAULT:
+            act_id = []
+            inhib_id = []
+        elif regType == RegulationType.INHIBITION:
+            act_id = []
+            delList = np.concatenate([rct_id, prd_id])
+            if len(boundaryIdx) > 0:
+                delList = np.unique(np.append(delList, boundaryIdx))
+            cList = np.delete(nsList, delList)
+            if len(cList) == 0:
                 inhib_id = []
-            elif regType == RegulationType.INHIBITION:
-                act_id = []
-                delList = np.concatenate([rct_id, prd_id])
-                if len(boundaryIdx) > 0:
-                    delList = np.unique(np.append(delList, boundaryIdx))
-                cList = np.delete(np.arange(nSpecies), delList)
-                if len(cList) == 0:
-                    inhib_id = []
-                    regType = RegulationType.DEFAULT
-                else:
-                    inhib_id = np.random.choice(cList, size=1).tolist()
-            elif regType == RegulationType.ACTIVATION:
-                inhib_id = []
-                delList = np.concatenate([rct_id, prd_id])
-                if len(boundaryIdx) > 0:
-                    delList = np.unique(np.append(delList, boundaryIdx))
-                cList = np.delete(np.arange(nSpecies), delList)
-                if len(cList) == 0:
-                    act_id = []
-                    regType = RegulationType.DEFAULT
-                else:
-                    act_id = np.random.choice(cList, size=1).tolist()
+                regType = RegulationType.DEFAULT
             else:
-                delList = np.concatenate([rct_id, prd_id])
-                if len(boundaryIdx) > 0:
-                    delList = np.unique(np.append(delList, boundaryIdx))
-                cList = np.delete(np.arange(nSpecies), delList)
-                if len(cList) < 2:
-                    act_id = []
-                    inhib_id = []
-                    regType = RegulationType.DEFAULT
-                else:
-                    reg_id = np.random.choice(cList, size=2, replace=False)
-                    act_id = [reg_id[0]]
-                    inhib_id = [reg_id[1]]
-            
-            reactionList.append ([rType, 
-                                  regType, 
-                                  revType, 
-                                  [rct_id[0], rct_id[1]], 
-                                  [prd_id[0], prd_id[1]], 
-                                  act_id, 
-                                  inhib_id])
-            
+                inhib_id = np.random.choice(cList, size=1).tolist()
+        elif regType == RegulationType.ACTIVATION:
+            inhib_id = []
+            delList = np.concatenate([rct_id, prd_id])
+            if len(boundaryIdx) > 0:
+                delList = np.unique(np.append(delList, boundaryIdx))
+            cList = np.delete(nsList, delList)
+            if len(cList) == 0:
+                act_id = []
+                regType = RegulationType.DEFAULT
+            else:
+                act_id = np.random.choice(cList, size=1).tolist()
+        else:
+            delList = np.concatenate([rct_id, prd_id])
+            if len(boundaryIdx) > 0:
+                delList = np.unique(np.append(delList, boundaryIdx))
+            cList = np.delete(nsList, delList)
+            if len(cList) < 2:
+                act_id = []
+                inhib_id = []
+                regType = RegulationType.DEFAULT
+            else:
+                reg_id = np.random.choice(cList, size=2, replace=False)
+                act_id = [reg_id[0]]
+                inhib_id = [reg_id[1]]
+                
+        reactionList.append([rType, 
+                             regType, 
+                             revType, 
+                             rct_id, 
+                             prd_id, 
+                             act_id, 
+                             inhib_id])
+        
     return reactionList
     
 
@@ -684,13 +528,13 @@ def generateParameterBoundary(glgp):
     
     for i in range(len(glgp)):
         if glgp[i].startswith('Kf'):
-            pBound.append((1e-2, 10.))
+            pBound.append((1e-3, 1.))
         elif glgp[i].startswith('Kr'):
-            pBound.append((1e-2, 10.))
+            pBound.append((1e-3, 1.))
         elif glgp[i].startswith('Ka'):
-            pBound.append((1e-2, 10.))
+            pBound.append((1e-3, 1.))
         elif glgp[i].startswith('Ki'):
-            pBound.append((1e-2, 10.))
+            pBound.append((1e-3, 1.))
 
     return pBound
     
