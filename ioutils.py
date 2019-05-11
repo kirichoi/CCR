@@ -438,7 +438,7 @@ def testModels(modelType):
         S4 = 1
         S5 = 1
         """
-    elif modelType == 'Full1':
+    elif modelType == 'sigPath':
         realModel = """
         var S0, S1, S2, S3, S4, S5;
         J0: S0 -> S1; 1/(1 + S5/Ki0)*(Kf0*S0)/(1 + S0);
