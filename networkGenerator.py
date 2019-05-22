@@ -29,14 +29,14 @@ class RP:
     BiBI  = 0.05
     
 class RLP:
-    Default = 0.75
-    Inhib = 0.12
-    Activ = 0.12
-    Inhibactiv = 0.01
+    Default = 1.
+    Inhib = 0.
+    Activ = 0.
+    Inhibactiv = 0.
     
 class REVP:
-    Irreversible = 1.
-    Reversible = 0.
+    Irreversible = 0.
+    Reversible = 1.
 
 #def pickRateLawType():
 #    rt = np.random.random()
@@ -498,13 +498,13 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
     
     for i in range(len(Klist_f)):
         if Klist_f[i].startswith('Kf'):
-            antStr = antStr + Klist_f[i] + ' = 1\n'
-        elif Klist_f[i].startswith('Kr'):
             antStr = antStr + Klist_f[i] + ' = 0.5\n'
+        elif Klist_f[i].startswith('Kr'):
+            antStr = antStr + Klist_f[i] + ' = 0.25\n'
         elif Klist_f[i].startswith('Ka'):
-            antStr = antStr + Klist_f[i] + ' = 1\n'
+            antStr = antStr + Klist_f[i] + ' = 0.5\n'
         elif Klist_f[i].startswith('Ki'):
-            antStr = antStr + Klist_f[i] + ' = 1\n'
+            antStr = antStr + Klist_f[i] + ' = 0.5\n'
         
     # Initialize boundary species
     antStr = antStr + '\n'
@@ -563,4 +563,163 @@ def generateLinearChainAnt(ns):
         
     return antStr
 
+
+def generateReactionListFromAntimony(antStr):
+    """
+    """
+    import tesbml
+    import sympy
     
+    r = te.loada(antStr)
+    
+    numBnd = r.getNumBoundarySpecies()
+    numFlt = r.getNumFloatingSpecies()
+    boundaryId = r.getBoundarySpeciesIds()
+    floatingId = r.getFloatingSpeciesIds()
+    nr = r.getNumReactions()
+    
+    # prepare symbols for sympy
+    boundaryId_sympy = [] 
+    floatingId_sympy = []
+    
+    # Fix issues with reserved characters
+    for i in range(numBnd):
+        if boundaryId[i] == 'S':
+            boundaryId_sympy.append('_S')
+        else:
+            boundaryId_sympy.append(boundaryId[i])
+    
+    for i in range(numFlt):
+        if floatingId[i] == 'S':
+            floatingId_sympy.append('_S')
+        else:
+            floatingId_sympy.append(floatingId[i])
+    
+    paramIdsStr = ' '.join(r.getGlobalParameterIds())
+    floatingIdsStr = ' '.join(floatingId_sympy)
+    boundaryIdsStr = ' '.join(boundaryId_sympy)
+    comparmentIdsStr = ' '.join(r.getCompartmentIds())
+    
+    allIds = paramIdsStr + ' ' + floatingIdsStr + ' ' + boundaryIdsStr + ' ' + comparmentIdsStr
+    
+    avsym = sympy.symbols(allIds)
+    
+    # extract reactant, product, modifiers, and kinetic laws
+    rct = []
+    prd = []
+    mod = []
+    r_type = []
+    kineticLaw = []
+    mod_type = []
+    
+    doc = tesbml.readSBMLFromString(r.getSBML())
+    sbmlmodel = doc.getModel()
+
+    for slr in sbmlmodel.getListOfReactions():
+        temprct = []
+        tempprd = []
+        tempmod = []
+        
+        sbmlreaction = sbmlmodel.getReaction(slr.getId())
+        for sr in range(sbmlreaction.getNumReactants()):
+            sbmlrct = sbmlreaction.getReactant(sr)
+            temprct.append(sbmlrct.getSpecies())
+        for sp in range(sbmlreaction.getNumProducts()):
+            sbmlprd = sbmlreaction.getProduct(sp)
+            tempprd.append(sbmlprd.getSpecies())
+        for sm in range(sbmlreaction.getNumModifiers()):
+            sbmlmod = sbmlreaction.getModifier(sm)
+            tempmod.append(sbmlmod.getSpecies())
+        kl = sbmlreaction.getKineticLaw()
+        
+        rct.append(sorted(temprct, key=lambda v: (v.upper(), v[0].islower())))
+        prd.append(sorted(tempprd, key=lambda v: (v.upper(), v[0].islower())))
+        mod.append(sorted(tempmod, key=lambda v: (v.upper(), v[0].islower())))
+        
+        # Update kinetic law according to change in species name
+        kl_split = kl.getFormula().split(' ')
+        for i in range(len(kl_split)):
+            if kl_split[i] == 'S':
+                kl_split[i] = '_S'
+        
+        kineticLaw.append(' '.join(kl_split))
+    
+    # use sympy for analyzing modifiers weSmart
+    for ml in range(len(mod)):
+        mod_type_temp = []
+        expression = kineticLaw[ml]
+        n,d = sympy.fraction(expression)
+        for ml_i in range(len(mod[ml])):
+            if n.has(mod[ml][ml_i]) and not d.has(mod[ml][ml_i]):
+                mod_type_temp.append('activator')
+            elif d.has(mod[ml][ml_i]) and not n.has(mod[ml][ml_i]):
+                mod_type_temp.append('inhibitor')
+            elif n.has(mod[ml][ml_i]) and d.has(mod[ml][ml_i]):
+                mod_type_temp.append('inhibitor_activator')
+            else:
+                mod_type_temp.append('modifier')
+        mod_type.append(mod_type_temp)
+        
+        # In case all products are in rate law, assume it is a reversible reaction
+        if all(ext in str(n) for ext in prd[ml]):
+            r_type.append('reversible')
+        else:
+            r_type.append('irreversible')
+        
+    reactionList = []
+    
+    for i in range(nr):
+        inhib = []
+        activ = []
+        rct_temp = []
+        prd_temp = []
+        
+        if len(rct[i]) == 1:
+            if len(prd[i]) == 1:
+                rType = 0
+            elif len(prd[i]) == 2:
+                rType = 2
+        elif len(rct[i]) == 2:
+            if len(prd[i]) == 1:
+                rType = 1
+            elif len(prd[i]) == 2:
+                rType = 3
+        
+        for j in range(len(rct[i])):
+            rct_temp.append(int(rct[i][j][1:]))
+            
+        for j in range(len(prd[i])):
+            prd_temp.append(int(prd[i][j][1:]))
+        
+        if len(mod_type[i]) == 0:
+            regType = 0
+        else:
+            for k in range(len(mod_type[i])):
+                if mod_type[i][k] == 'inhibitor':
+                    inhib.append(int(mod[i][k][1:]))
+                elif mod_type[i][k] == 'activator':
+                    activ.append(int(mod[i][k][1:]))
+                
+                if len(inhib) > 0:
+                    if len(activ) == 0:
+                        regType = 1
+                    else:
+                        regType = 3
+                else:
+                    regType = 2
+                
+        if r_type[i] == 'reversible':
+            revType = 1
+        else:
+            revType = 0
+
+        reactionList.append([rType, 
+                             regType, 
+                             revType, 
+                             rct_temp, 
+                             prd_temp,
+                             activ,
+                             inhib])
+    
+    return reactionList
+
