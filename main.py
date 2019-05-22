@@ -496,7 +496,7 @@ if __name__ == '__main__':
     
     # 'FFL_m', 'Linear_m', 'Nested_m', 'Branched_m', 'sigPath'
     # 'FFL_r', 'Linear_r', 'Nested_r', 'Branched_r'
-    modelType = 'Nested_m' 
+    modelType = 'Branched_r' 
     
     
     # General settings ========================================================
@@ -504,7 +504,7 @@ if __name__ == '__main__':
     # Number of generations
     n_gen = 1000
     # Size of output ensemble
-    ens_size = 100
+    ens_size = 200
     # Number of models passed on the next generation without mutation
     pass_size = int(ens_size/10)
     # Number of models to mutate
@@ -558,7 +558,7 @@ if __name__ == '__main__':
     # Flag for saving current settings
     EXPORT_SETTINGS = False
     # Path to save the output
-    EXPORT_PATH = './USE/output_Nested_m_u3'
+    EXPORT_PATH = './USE/output_Branched_r_u3'
     
     # Flag to run algorithm
     RUN = True
@@ -569,13 +569,15 @@ if __name__ == '__main__':
     
     roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX, True)
     roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_MAX_STEPS, 5)
-    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TIME, 1000000)
+    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TIME, 100000)
 #    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TOL, 1e-3)
         
     # Using one of the test models
     realModel = ioutils.testModels(modelType)
     
     realRR = te.loada(realModel)
+    
+    realRL = ng.generateReactionListFromAntimony(realModel)
     
     # Species
     realNumBoundary = realRR.getNumBoundarySpecies()
@@ -676,8 +678,7 @@ if __name__ == '__main__':
         print("Top 5 distance: " + str(top5_dist[-1]))
         print("Average distance: " + str(avg_dist[-1]))
 
-        
-        breakFlag = False
+#        breakFlag = False
         
         # TODO: Remove for loop
         for n in n_range:
