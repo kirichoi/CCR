@@ -504,7 +504,7 @@ if __name__ == '__main__':
     # Number of generations
     n_gen = 1000
     # Size of output ensemble
-    ens_size = 200
+    ens_size = 100
     # Number of models passed on the next generation without mutation
     pass_size = int(ens_size/10)
     # Number of models to mutate
@@ -520,7 +520,7 @@ if __name__ == '__main__':
     # Optimizer settings ======================================================
     
     # Maximum iteration allowed for optimizer
-    optiMaxIter = 100
+    optiMaxIter = 1000
     optiTol = 1.
     optiPolish = False
     # Weight for control coefficients when calculating the distance
@@ -536,9 +536,9 @@ if __name__ == '__main__':
     # Flag for adding Gaussian noise to steady-state and control coefficiant values
     NOISE = False
     # Standard deviation of Gaussian noise
-    ABS_NOISE_STD = 0.01
+    ABS_NOISE_STD = 0.005
     # Standard deviation of Gaussian noise
-    REL_NOISE_STD = 0.1
+    REL_NOISE_STD = 0.05
     
     
     # Plotting settings =======================================================
@@ -558,18 +558,18 @@ if __name__ == '__main__':
     # Flag for saving current settings
     EXPORT_SETTINGS = False
     # Path to save the output
-    EXPORT_PATH = './USE/output_Branched_r_u3'
+    EXPORT_PATH = './USE/output_Branched_r_u5'
     
     # Flag to run algorithm
-    RUN = True
+    RUN = False
     
 #%% Analyze True Model
     if conservedMoiety:
         roadrunner.Config.setValue(roadrunner.Config.LOADSBMLOPTIONS_CONSERVED_MOIETIES, True)
     
     roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX, True)
-    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_MAX_STEPS, 5)
-    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TIME, 100000)
+    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_MAX_STEPS, 15)
+    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TIME, 10000)
 #    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TOL, 1e-3)
         
     # Using one of the test models
@@ -631,26 +631,25 @@ if __name__ == '__main__':
     realCount = np.array(np.unravel_index(np.argsort(realFluxCC, axis=None), realFluxCC.shape)).T
         
     #%%
-    if RUN:
+    print("Original Control Coefficients")
+    print(realConcCC)
+    print("Original Steady State Ratio")
+    print(realSteadyStateRatio)
+    
+    # Define Seed and Ranges
+    np.random.seed(r_seed)
+    
+    if NOISE:
+        for i in range(len(realConcCC)):
+            for j in range(len(realConcCC[i])):
+                realConcCC[i][j] = (realConcCC[i][j] + 
+                          np.random.normal(0,ABS_NOISE_STD) +
+                          np.random.normal(0,np.abs(realConcCC[i][j]*REL_NOISE_STD)))
         
-        print("Original Control Coefficients")
+        print("Control Coefficients with Noise Added")
         print(realConcCC)
-        print("Original Steady State Ratio")
-        print(realSteadyStateRatio)
-        
-        # Define Seed and Ranges
-        np.random.seed(r_seed)
-        
-        if NOISE:
-            for i in range(len(realConcCC)):
-                for j in range(len(realConcCC[i])):
-                    realConcCC[i][j] = (realConcCC[i][j] + 
-                              np.random.normal(0,ABS_NOISE_STD) +
-                              np.random.normal(0,np.abs(realConcCC[i][j]*REL_NOISE_STD)))
-            
-            print("Control Coefficients with Noise Added")
-            print(realConcCC)
-        
+    
+    if RUN:
         # Initualize Lists
         best_dist = []
         avg_dist = []
@@ -757,7 +756,7 @@ if __name__ == '__main__':
         #%%
         # Collect models
         
-        minInd, log_dens = analysis.selectWithKernalDensity(model_top, dist_top)
+        minInd, log_dens = analysis.selectWithKernalDensity(dist_top)
         if len(minInd[0]) == 0:
             minInd = np.array([[len(model_top) - 1]])
                 
