@@ -76,10 +76,10 @@ def mutate_and_evaluate(listantStr, listdist, listrl):
         
         concCC = r.getScaledConcentrationControlCoefficientMatrix()
         
-        cFalse = (1 + concCC.shape[0] - np.sum(np.equal(np.sign(np.array(realConcCC)), 
-                  np.sign(np.array(concCC))), axis=0))
+        cFalse = (1 + np.sum(np.not_equal(np.sign(np.array(realConcCC)), 
+                                          np.sign(np.array(concCC))), axis=0))
 
-        tempdiff = cFalse*np.max(np.abs(realConcCC - concCC), axis=0)
+        tempdiff = cFalse*np.linalg.norm(realConcCC - concCC, axis=0)
         
         stt = [[],[],[]]
         reactionList = rl_track[0]
@@ -558,17 +558,17 @@ if __name__ == '__main__':
     # Flag for saving current settings
     EXPORT_SETTINGS = False
     # Path to save the output
-    EXPORT_PATH = './USE/output_Branched_r_u5'
+    EXPORT_PATH = './USE/output_Branched_r_u7'
     
     # Flag to run algorithm
-    RUN = False
+    RUN = True
     
 #%% Analyze True Model
     if conservedMoiety:
         roadrunner.Config.setValue(roadrunner.Config.LOADSBMLOPTIONS_CONSERVED_MOIETIES, True)
     
     roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX, True)
-    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_MAX_STEPS, 15)
+    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_MAX_STEPS, 5)
     roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TIME, 10000)
 #    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TOL, 1e-3)
         
