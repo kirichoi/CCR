@@ -496,6 +496,50 @@ def testModels(modelType):
         S4 = 1
         S5 = 1
         """
+    elif modelType == 'Linear_m_a':
+        # FFL    
+        realModel = """
+        var S1, S2, S3;
+        const S0, S4;
+        J0: S0 -> S1; Kf0*S0/(1 + S0);
+        J1: S1 -> S2; Kf1*S1/(1 + S1);
+        J2: S2 -> S3; Kf2*S2/(1 + S2);
+        J3: S3 -> S4; Kf3*S3/(1 + S3)*(1 + Ka0*S1);
+       
+        Kf0 = 0.285822003905
+        Kf1 = 0.571954691013
+        Kf2 = 0.393173236422
+        Kf3 = 0.75830845241
+        Ka0 = 0.883848629231
+       
+        S0 = 3
+        S4 = 5
+        S1 = 1
+        S2 = 1
+        S3 = 1
+        """
+    elif modelType == 'Linear_m_i':
+        # I1FFL
+        realModel = """
+        var S1, S2, S3;
+        const S0, S4;
+        J0: S0 -> S1; Kf0*S0/(1 + S0);
+        J1: S1 -> S2; Kf1*S1/(1 + S1);
+        J2: S2 -> S3; Kf2*S2/(1 + S2);
+        J3: S3 -> S4; Kf3*S3/(1 + S3)*1/(1 + Ki0*S1);
+       
+        Kf0 = 0.285822003905
+        Kf1 = 0.571954691013
+        Kf2 = 0.393173236422
+        Kf3 = 0.75830845241
+        Ki0 = 0.974569278466
+       
+        S0 = 3
+        S4 = 5
+        S1 = 1
+        S2 = 1
+        S3 = 1
+        """
     else:
         raise Exception("Requested model not found")
         
