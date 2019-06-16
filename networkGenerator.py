@@ -403,7 +403,7 @@ def generateSimpleRateLaw(rl, floatingIds, boundaryIds, Jind):
     # Activation
     if (len(rl[Jind][5]) > 0):
         for i in range(len(rl[Jind][5])):
-            ACT = ACT + '(1/(1 + Ka' + str(Jind) + str(i) + '/'
+            ACT = ACT + '(Ka' + str(Jind) + str(i) + '*' + 'S' + str(rl[Jind][5][i]) + '/(1 +'
             Klist.append('Ka' + str(Jind) + str(i))
             ACT = ACT + 'S' + str(rl[Jind][5][i]) + '))*'
             
@@ -650,7 +650,7 @@ def generateReactionListFromAntimony(antStr):
         expression = kineticLaw[ml]
         n,d = sympy.fraction(expression)
         for ml_i in range(len(mod[ml])):
-            if n.has(mod[ml][ml_i]) and not d.has(mod[ml][ml_i]):
+            if n.has(mod[ml][ml_i]):
                 mod_type_temp.append('activator')
             elif d.has(mod[ml][ml_i]) and not n.has(mod[ml][ml_i]):
                 mod_type_temp.append('inhibitor')
