@@ -403,9 +403,9 @@ def generateSimpleRateLaw(rl, floatingIds, boundaryIds, Jind):
     # Activation
     if (len(rl[Jind][5]) > 0):
         for i in range(len(rl[Jind][5])):
-            ACT = ACT + '(Ka' + str(Jind) + str(i) + '*' + 'S' + str(rl[Jind][5][i]) + '/(1 +'
+            ACT = ACT + '(1 + Ka' + str(Jind) + str(i) + '*'
             Klist.append('Ka' + str(Jind) + str(i))
-            ACT = ACT + 'S' + str(rl[Jind][5][i]) + '))*'
+            ACT = ACT + 'S' + str(rl[Jind][5][i]) + ')*'
             
     # Inhibition
     if (len(rl[Jind][6]) > 0):
