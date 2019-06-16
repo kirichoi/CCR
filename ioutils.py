@@ -503,7 +503,7 @@ def testModels(modelType):
         J0: S0 -> S1; (Kf0*S0 - Kr0*S1)/(1 + S0 + S1);
         J1: S1 -> S2; (Kf1*S1 - Kr1*S2)/(1 + S1 + S2);
         J2: S2 -> S3; (Kf2*S2 - Kr2*S3)/(1 + S2 + S3);
-        J3: S3 -> S4; (Kf3*S3 - Kr3*S4)/(1 + S3 + S4)*(1/(1 + Ka0/S1));
+        J3: S3 -> S4; (Kf3*S3 - Kr3*S4)/(1 + S3 + S4)*(Ka0*S1/(1 + S1));
        
         Kf0 = 0.885822003905
         Kf1 = 0.571954691013
@@ -578,7 +578,7 @@ def testModels(modelType):
         J0: S0 -> S1; (Kf0*S0 - Kr0*S1)/(1 + S0 + S1);
         J1: S1 -> S2; (Kf1*S1 - Kr1*S2)/(1 + S1 + S2);
         J2: S2 -> S3; (Kf2*S2 - Kr2*S3)/(1 + S2 + S3);
-        J3: S3 -> S4; (Kf3*S3 - Kr3*S4)/(1 + S3 + S4 + S1/Ki0);
+        J3: S3 -> S4; (Kf3*S3 - Kr3*S4)/(1 + S3 + S4 + Ki0*S1);
        
         Kf0 = 0.885822003905
         Kf1 = 0.571954691013
