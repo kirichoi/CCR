@@ -29,10 +29,10 @@ class RP:
     BiBI  = 0.05
     
 class RLP:
-    Default = 1.
-    Inhib = 0.
-    Activ = 0.
-    Inhibactiv = 0.
+    Default = 0.7
+    Inhib = 0.125
+    Activ = 0.125
+    Inhibactiv = 0.05
     
 class REVP:
     Irreversible = 0.
@@ -403,9 +403,9 @@ def generateSimpleRateLaw(rl, floatingIds, boundaryIds, Jind):
     # Activation
     if (len(rl[Jind][5]) > 0):
         for i in range(len(rl[Jind][5])):
-            ACT = ACT + '(1 + Ka' + str(Jind) + str(i) + '*'
+            ACT = ACT + '(1/(1 + Ka' + str(Jind) + str(i) + '/'
             Klist.append('Ka' + str(Jind) + str(i))
-            ACT = ACT + 'S' + str(rl[Jind][5][i]) + ')*'
+            ACT = ACT + 'S' + str(rl[Jind][5][i]) + '))*'
             
     # Inhibition
     if (len(rl[Jind][6]) > 0):
@@ -510,7 +510,7 @@ def generateAntimony(floatingIds, boundaryIds, stt1, stt2, reactionList, boundar
     antStr = antStr + '\n'
     if type(boundary_init) == type(None):
         for index, bind in enumerate(boundaryIds):
-            antStr = antStr + str(bind) + ' = ' + str(np.random.randint (1,6)) + '\n'
+            antStr = antStr + str(bind) + ' = ' + str(np.random.randint(1,6)) + '\n'
     else:
         for index, bind in enumerate(boundaryIds):
             antStr = antStr + str(bind) + ' = ' + str(boundary_init[index]) + '\n'
