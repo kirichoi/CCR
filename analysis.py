@@ -140,16 +140,15 @@ def selectWithCutoff(model_top, dist_top, cutoff=0.1):
     return model_top[:coind], dist_top[:coind]
 
 
-def selectWithKernalDensity(model_top, dist_top):
+def selectWithKernalDensity(dist_top):
     """
     Model selection rountine that returns a list of models based on the output
     of kernal density estimation.
     
-    :param model_top: list of models sorted according to corresponding distances
     :param dist_top: list of sorted distances
     """
     
-    dist_top_reshape = dist_top.reshape((len(model_top),1))
+    dist_top_reshape = dist_top.reshape((len(dist_top),1))
     
     kde = neighbors.KernelDensity(kernel='tophat', bandwidth=0.005).fit(dist_top_reshape)
     
