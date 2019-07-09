@@ -152,7 +152,7 @@ def selectWithKernalDensity(model_top, dist_top, export_flag=False):
 
     dist_top_reshape = dist_top.reshape((len(dist_top),1))
     
-    kde_xarr = np.linspace(0, np.max(dist_top), np.max(dist_top)*10)[:, np.newaxis]
+    kde_xarr = np.linspace(0, np.max(dist_top), int(np.max(dist_top)*10))[:, np.newaxis]
     
     kde = neighbors.KernelDensity(kernel='gaussian', bandwidth=0.3).fit(dist_top_reshape)
     
