@@ -496,13 +496,13 @@ if __name__ == '__main__':
     
     # 'FFL_m', 'Linear_m', 'Nested_m', 'Branched_m', 'sigPath'
     # 'FFL_r', 'Linear_r', 'Nested_r', 'Branched_r'
-    modelType = 'Branched_r' 
+    modelType = 'Linear_r_a_allo'
     
     
     # General settings ========================================================
     
     # Number of generations
-    n_gen = 1000
+    n_gen = 500
     # Size of output ensemble
     ens_size = 100
     # Number of models passed on the next generation without mutation
@@ -551,17 +551,17 @@ if __name__ == '__main__':
     
     # Data settings ===========================================================
     
-    # Flag for collecting models
+    # Flag for collecting all models in the ensemble
     EXPORT_ALL_MODELS = True
     # Flag for saving collected models
     EXPORT_OUTPUT = True
     # Flag for saving current settings
     EXPORT_SETTINGS = False
     # Path to save the output
-    EXPORT_PATH = './USE/output_Branched_r_u7'
+    EXPORT_PATH = './USE/output_Linear_r_a_allo_u2'
     
     # Flag to run algorithm
-    RUN = True
+    RUN = False
     
 #%% Analyze True Model
     if conservedMoiety:
@@ -569,7 +569,7 @@ if __name__ == '__main__':
     
     roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX, True)
     roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_MAX_STEPS, 5)
-    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TIME, 10000)
+    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TIME, 100000)
 #    roadrunner.Config.setValue(roadrunner.Config.STEADYSTATE_APPROX_TOL, 1e-3)
         
     # Using one of the test models
@@ -756,15 +756,11 @@ if __name__ == '__main__':
         #%%
         # Collect models
         
-        minInd, log_dens = analysis.selectWithKernalDensity(dist_top)
-        if len(minInd[0]) == 0:
-            minInd = np.array([[len(model_top) - 1]])
-                
-        if EXPORT_ALL_MODELS:
-            minInd = np.array([[len(model_top) - 1]])
+        minInd, log_dens, kde_xarr, kde_idx = analysis.selectWithKernalDensity(model_top, dist_top, export_flag=EXPORT_ALL_MODELS)
+
+        model_col = model_top[:kde_idx]
+        dist_col = dist_top[:kde_idx]
         
-        model_col = model_top[:minInd[0][0] + 1]
-        dist_col = dist_top[:minInd[0][0] + 1]
             
     #%%
         EXPORT_PATH = os.path.abspath(os.path.join(os.getcwd(), EXPORT_PATH))
